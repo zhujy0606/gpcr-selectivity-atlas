@@ -36,7 +36,7 @@ def build(output: Path, version: str) -> list[Path]:
     with zipfile.ZipFile(table_zip, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6, allowZip64=True) as archive:
         add_tree(archive, SITE / "data", "data")
         add_tree(archive, SITE / "downloads", "downloads")
-        for name in ("README.md", "DATA_DICTIONARY.md", "LICENSE_DATA.md", "PUBLISHING.md"):
+        for name in ("README.md", "CITATION.cff", "DATA_DICTIONARY.md", "LICENSE_DATA.md", "PUBLISHING.md"):
             archive.write(HERE / name, name)
     with zipfile.ZipFile(surface_zip, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=4, allowZip64=True) as archive:
         add_tree(archive, SURFACES, "single_gpcr_outputs")

@@ -42,6 +42,8 @@
 
 Zenodo DOI产生后，回填网站下载链接、`CITATION.cff`和README。
 
+当前冻结作者信息：朱景一（Jingyi Zhu），山东大学（Shandong University），ORCID `0009-0003-8404-0455`。
+
 ## 更新策略
 
 - GitHub仓库：网页代码与小型规范数据的持续版本；

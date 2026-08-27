@@ -41,6 +41,15 @@ class PublicBuildTest(unittest.TestCase):
         for key, value in expected.items():
             self.assertEqual(counts[key], value, key)
 
+    def test_creator_metadata(self):
+        creator = self.summary["creators"][0]
+        self.assertEqual(creator["name"], "Zhu, Jingyi")
+        self.assertEqual(creator["affiliation"], "Shandong University")
+        self.assertEqual(creator["orcid"], "0009-0003-8404-0455")
+        citation = (PUBLIC / "CITATION.cff").read_text()
+        self.assertIn('given-names: "Jingyi"', citation)
+        self.assertIn('orcid: "https://orcid.org/0009-0003-8404-0455"', citation)
+
     def test_relations(self):
         self.assertEqual(len(self.receptors), 287)
         self.assertEqual(len(self.pairs), 163)

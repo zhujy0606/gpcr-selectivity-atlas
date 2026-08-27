@@ -456,6 +456,15 @@ def build() -> dict[str, Any]:
         "title": "GPCR Selectivity Atlas",
         "version": "0.1.0-mvp",
         "build_date": date.today().isoformat(),
+        "creators": [
+            {
+                "name": "Zhu, Jingyi",
+                "name_zh": "朱景一",
+                "affiliation": "Shandong University",
+                "affiliation_zh": "山东大学",
+                "orcid": "0009-0003-8404-0455",
+            }
+        ],
         "counts": {
             "surface_receptors": len(receptors),
             "surface_matrix_receptors": len(matrix_accessions),
@@ -486,6 +495,7 @@ def build() -> dict[str, Any]:
     provenance = {
         "atlas_version": summary["version"],
         "build_date": summary["build_date"],
+        "creators": summary["creators"],
         "sources": source_hashes,
         "limitations": [
             "All docking, ADMET, pose-stability, dMaSIF and MM/GBSA values are computational predictions.",

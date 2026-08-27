@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+message: "If you use the GPCR Selectivity Atlas, please cite this dataset and software resource."
+title: "GPCR Selectivity Atlas: dMaSIF Surface, Receptor-Pair Hotspot and PocketXMol Dataset"
+type: dataset
+version: 0.1.0
+date-released: 2026-08-27
+authors:
+  - family-names: "Zhu"
+    given-names: "Jingyi"
+    affiliation: "Shandong University"
+    orcid: "https://orcid.org/0009-0003-8404-0455"
+repository-code: "https://github.com/zhujy0606/gpcr-selectivity-atlas"
+url: "https://zhujy0606.github.io/gpcr-selectivity-atlas/"
+keywords:
+  - GPCR
+  - dMaSIF
+  - molecular surface
+  - receptor selectivity
+  - molecular docking
+  - PocketXMol
+  - MM/GBSA
+  - ADMET

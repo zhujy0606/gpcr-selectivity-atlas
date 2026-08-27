@@ -4,6 +4,7 @@
 
 - 公开网站：https://zhujy0606.github.io/gpcr-selectivity-atlas/
 - GitHub仓库：https://github.com/zhujy0606/gpcr-selectivity-atlas
+- 作者：朱景一（山东大学），ORCID：[0009-0003-8404-0455](https://orcid.org/0009-0003-8404-0455)
 
 ## 构建
 
