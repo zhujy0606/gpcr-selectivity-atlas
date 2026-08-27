@@ -19,7 +19,7 @@
     },
     "compound": {
       "type": "object",
-      "required": ["compound_id", "canonical_smiles", "pair_id", "target_uniprot", "offtarget_uniprot", "seed_record_id", "properties", "docking", "admet", "evidence"],
+      "required": ["compound_id", "canonical_smiles", "pair_id", "target_uniprot", "offtarget_uniprot", "seed_record_id", "properties", "docking", "admet", "evidence", "structure_download"],
       "properties": {
         "compound_id": {"type": "string", "pattern": "^A6PX-"},
         "canonical_smiles": {"type": "string"},
@@ -30,7 +30,27 @@
         "properties": {"type": "object"},
         "docking": {"type": "object"},
         "admet": {"type": "object"},
-        "evidence": {"type": "object"}
+        "structure_download": {
+          "type": "object",
+          "required": ["availability", "bundle_url", "bundle_size_bytes", "bundle_sha256", "ligand_sdf_count", "complex_pdb_count", "complex_pdbs"],
+          "properties": {
+            "availability": {"enum": ["ligand_sdf_only", "ligand_sdf_and_complex_pdb"]},
+            "bundle_url": {"type": "string", "pattern": "^downloads/structures/A6PX-.+\\.zip$"},
+            "bundle_size_bytes": {"type": "integer", "minimum": 1},
+            "bundle_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+            "ligand_sdf_count": {"type": "integer", "const": 1},
+            "complex_pdb_count": {"type": "integer", "minimum": 0},
+            "complex_pdbs": {"type": "array"}
+          }
+        },
+        "evidence": {
+          "type": "object",
+          "required": ["final_candidate_904", "strict_final_selected_111"],
+          "properties": {
+            "final_candidate_904": {"type": "boolean", "const": true},
+            "strict_final_selected_111": {"type": "boolean"}
+          }
+        }
       }
     }
   }

@@ -21,6 +21,8 @@ HERE = Path(__file__).resolve().parent
 SITE = HERE / "site"
 DATA = SITE / "data"
 DOWNLOADS = SITE / "downloads"
+STRUCTURE_DOWNLOADS = DOWNLOADS / "structures"
+STRUCTURE_MANIFEST = STRUCTURE_DOWNLOADS / "manifest.json"
 
 SOURCES = {
     "surface_assets": Path("data/masif/single_gpcr_outputs"),
@@ -124,7 +126,7 @@ def dump_json(name: str, payload: Any) -> None:
 
 def write_csv(name: str, payload: Iterable[dict[str, Any]], fields: list[str]) -> None:
     with (DOWNLOADS / name).open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fields, extrasaction="ignore")
+        writer = csv.DictWriter(handle, fieldnames=fields, extrasaction="ignore", lineterminator="\n")
         writer.writeheader()
         writer.writerows(payload)
 
@@ -150,6 +152,19 @@ def build() -> dict[str, Any]:
 
     compound_source = rows(SOURCES["compounds_904"])
     compound_ids = {row["prefilter_id"] for row in compound_source}
+    if not STRUCTURE_MANIFEST.is_file():
+        raise FileNotFoundError(
+            f"Public structure manifest is missing: {STRUCTURE_MANIFEST}. "
+            "Run prepare_structure_downloads.py against the frozen evidence host first."
+        )
+    structure_manifest = json.loads(STRUCTURE_MANIFEST.read_text(encoding="utf-8"))
+    structure_by_id = {record["compound_id"]: record for record in structure_manifest["records"]}
+    if set(structure_by_id) != compound_ids:
+        raise RuntimeError("Public structure bundles do not exactly cover the 904-candidate master set")
+    for compound_id, structure in structure_by_id.items():
+        bundle_path = STRUCTURE_DOWNLOADS / structure["bundle_filename"]
+        if not bundle_path.is_file() or sha256(bundle_path) != structure["bundle_sha256"]:
+            raise RuntimeError(f"Public structure bundle is missing or hash-invalid: {compound_id}")
     pose_by_id = {row["prefilter_id"]: row for row in rows(SOURCES["pose"])}
     decisions_by_id = {row["prefilter_id"]: row for row in rows(SOURCES["decisions"])}
     shortlist_by_id = {row["prefilter_id"]: row for row in rows(SOURCES["shortlist"])}
@@ -192,6 +207,7 @@ def build() -> dict[str, Any]:
         decision = decisions_by_id.get(compound_id)
         admet = admet_by_id.get(compound_id, {})
         shortlist = shortlist_by_id.get(compound_id, {})
+        structure = structure_by_id[compound_id]
         mmgbsa_status = "not_evaluated_cross_domain_gate"
         baseline_complete = False
         dual_improved = False
@@ -225,6 +241,18 @@ def build() -> dict[str, Any]:
             "seed_record_id": seed_record_id,
             "seed_zinc_id": source["seed_zinc_id"],
             "similarity_to_seed": number(source["ecfp4_tanimoto_to_seed"]),
+            "structure_download": {
+                "availability": "ligand_sdf_and_complex_pdb" if structure["complex_pdbs"] else "ligand_sdf_only",
+                "bundle_url": f'downloads/structures/{structure["bundle_filename"]}',
+                "bundle_size_bytes": structure["bundle_size_bytes"],
+                "bundle_sha256": structure["bundle_sha256"],
+                "ligand_sdf_count": 1,
+                "complex_pdb_count": len(structure["complex_pdbs"]),
+                "complex_pdbs": structure["complex_pdbs"],
+                "note": "Computational receptor-ligand complexes from the audited MM/GBSA run; not experimental structures."
+                if structure["complex_pdbs"] else
+                "The ligand SDF is archived; this candidate did not enter the 438-candidate MM/GBSA complex subset.",
+            },
             "properties": properties,
             "docking": {
                 "target_repeats": [number(source[f"target_seed_{seed}"]) for seed in ("17171", "29292", "43434")],
@@ -244,6 +272,7 @@ def build() -> dict[str, Any]:
             },
             "admet": admet_public,
             "evidence": {
+                "final_candidate_904": True,
                 "cross_domain_shortlist": compound_id in shortlist_by_id,
                 "evidence_tier": (decision or {}).get("candidate_evidence_tier") or shortlist.get("evidence_tier"),
                 "mmgbsa_baseline_complete": baseline_complete,
@@ -253,6 +282,7 @@ def build() -> dict[str, Any]:
                 "mmgbsa_median_improvement": number((decision or {}).get("endpoint_dd_median_improvement_kcal_mol")),
                 "mmgbsa_worst_improvement": number((decision or {}).get("endpoint_dd_worst_improvement_kcal_mol")),
                 "final_selected": compound_id in final_by_id,
+                "strict_final_selected_111": compound_id in final_by_id,
                 "final_rank_within_pair": number(final_by_id.get(compound_id, {}).get("final_rank_within_pair")),
             },
         }
@@ -348,10 +378,16 @@ def build() -> dict[str, Any]:
                 "hotspots": hotspots,
                 "directions": directions,
                 "pair_terminal_status": status.get("pair_terminal_status"),
+                "final_candidate_count": compound_counts_by_pair[pair_id],
+                "strict_final_selected_count": number(status.get("final_selected_count")) or 0,
                 "final_selected_count": number(status.get("final_selected_count")) or 0,
                 "final_selected_ids": status.get("final_selected_ids", "").split("|") if status.get("final_selected_ids") else [],
                 "pocketxmol_seed_record_count": seed_counts_by_pair[pair_id],
                 "pocketxmol_compound_count": compound_counts_by_pair[pair_id],
+                "input_seed_zinc_ids": sorted({
+                    seed["seed_zinc_id"] for seed in seeds
+                    if seed["pair_id"] == pair_id and seed["seed_zinc_id"]
+                }),
             }
         )
 
@@ -474,11 +510,17 @@ def build() -> dict[str, Any]:
             "unique_seed_molecules": len({seed["seed_zinc_id"] for seed in seeds}),
             "seed_task_records": len(seeds),
             "generated_compounds": len(compounds),
+            "final_candidates": len(compounds),
             "admet_complete": sum(all(value is not None for value in compound["admet"].values()) for compound in compounds),
             "cross_domain_shortlist": sum(compound["evidence"]["cross_domain_shortlist"] for compound in compounds),
             "mmgbsa_seed_baseline_complete": sum(compound["evidence"]["mmgbsa_baseline_complete"] for compound in compounds),
             "mmgbsa_dual_endpoint_improved": sum(compound["evidence"]["mmgbsa_dual_endpoint_improved"] for compound in compounds),
             "final_selected": sum(compound["evidence"]["final_selected"] for compound in compounds),
+            "strict_final_selected": sum(compound["evidence"]["strict_final_selected_111"] for compound in compounds),
+            "structure_bundles": structure_manifest["counts"]["compounds"],
+            "ligand_sdf_files": structure_manifest["counts"]["ligand_sdf_files"],
+            "compounds_with_complex_pdb": structure_manifest["counts"]["compounds_with_complex_pdb"],
+            "complex_pdb_files": structure_manifest["counts"]["complex_pdb_files"],
             "active_structure_references": len(active_structures),
             "active_structure_pairwise_similarities": 0,
         },
@@ -496,7 +538,13 @@ def build() -> dict[str, Any]:
         "atlas_version": summary["version"],
         "build_date": summary["build_date"],
         "creators": summary["creators"],
-        "sources": source_hashes,
+        "sources": {
+            **source_hashes,
+            "public_structure_manifest": {
+                "source": "site/downloads/structures/manifest.json",
+                "sha256": sha256(STRUCTURE_MANIFEST),
+            },
+        },
         "limitations": [
             "All docking, ADMET, pose-stability, dMaSIF and MM/GBSA values are computational predictions.",
             "The active-state structural similarity matrix has not yet been computed.",
@@ -532,8 +580,9 @@ def build() -> dict[str, Any]:
             "uniprot_a": pair["receptor_a"]["uniprot"], "name_a": pair["receptor_a"]["name"],
             "uniprot_b": pair["receptor_b"]["uniprot"], "name_b": pair["receptor_b"]["name"],
             "surface_distance": pair["surface_distance"], "pair_terminal_status": pair["pair_terminal_status"],
-            "seed_task_records": pair["pocketxmol_seed_record_count"], "generated_compounds": pair["pocketxmol_compound_count"],
-            "final_selected_count": pair["final_selected_count"],
+            "seed_task_records": pair["pocketxmol_seed_record_count"], "input_seed_zinc_ids": "|".join(pair["input_seed_zinc_ids"]),
+            "generated_compounds": pair["pocketxmol_compound_count"], "final_candidate_count": pair["final_candidate_count"],
+            "strict_final_selected_count": pair["strict_final_selected_count"], "final_selected_count": pair["final_selected_count"],
         }
         for i, hotspot in enumerate(pair["hotspots"], 1):
             out[f"hotspot{i}_bw"] = hotspot["bw"]
@@ -567,7 +616,12 @@ def build() -> dict[str, Any]:
             **c["admet"],
             "cross_domain_shortlist": c["evidence"]["cross_domain_shortlist"], "mmgbsa_baseline_complete": c["evidence"]["mmgbsa_baseline_complete"],
             "mmgbsa_dual_endpoint_improved": c["evidence"]["mmgbsa_dual_endpoint_improved"], "mmgbsa_status": c["evidence"]["mmgbsa_status"],
+            "final_candidate_904": c["evidence"]["final_candidate_904"],
+            "strict_final_selected_111": c["evidence"]["strict_final_selected_111"],
             "final_selected": c["evidence"]["final_selected"],
+            "structure_availability": c["structure_download"]["availability"],
+            "structure_bundle_url": c["structure_download"]["bundle_url"],
+            "complex_pdb_count": c["structure_download"]["complex_pdb_count"],
         }
         compound_flat.append(out)
     write_csv("compounds_904.csv", compound_flat, list(compound_flat[0]))

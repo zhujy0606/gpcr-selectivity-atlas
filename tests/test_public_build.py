@@ -2,6 +2,7 @@ import csv
 import json
 import re
 import unittest
+import zipfile
 from pathlib import Path
 
 
@@ -32,11 +33,17 @@ class PublicBuildTest(unittest.TestCase):
             "unique_seed_molecules": 138,
             "seed_task_records": 178,
             "generated_compounds": 904,
+            "final_candidates": 904,
             "admet_complete": 904,
             "cross_domain_shortlist": 438,
             "mmgbsa_seed_baseline_complete": 323,
             "mmgbsa_dual_endpoint_improved": 141,
             "final_selected": 111,
+            "strict_final_selected": 111,
+            "structure_bundles": 904,
+            "ligand_sdf_files": 904,
+            "compounds_with_complex_pdb": 438,
+            "complex_pdb_files": 1444,
         }
         for key, value in expected.items():
             self.assertEqual(counts[key], value, key)
@@ -56,6 +63,27 @@ class PublicBuildTest(unittest.TestCase):
         self.assertTrue(all(len(pair["hotspots"]) == 3 for pair in self.pairs))
         self.assertEqual(len({compound["compound_id"] for compound in self.compounds}), 904)
         self.assertTrue(all(compound["seed_record_id"] and compound["pair_id"] for compound in self.compounds))
+        self.assertTrue(all(compound["evidence"]["final_candidate_904"] for compound in self.compounds))
+        self.assertTrue(all(compound["seed_zinc_id"].startswith("ZINC") for compound in self.compounds))
+        self.assertEqual(sum(pair["final_candidate_count"] for pair in self.pairs), 904)
+        self.assertEqual(sum(pair["strict_final_selected_count"] for pair in self.pairs), 111)
+
+    def test_structure_downloads(self):
+        self.assertTrue(all(compound["structure_download"]["ligand_sdf_count"] == 1 for compound in self.compounds))
+        self.assertEqual(sum(compound["structure_download"]["complex_pdb_count"] > 0 for compound in self.compounds), 438)
+        self.assertEqual(sum(compound["structure_download"]["complex_pdb_count"] for compound in self.compounds), 1444)
+        for compound in self.compounds:
+            structure = compound["structure_download"]
+            bundle = SITE / structure["bundle_url"]
+            self.assertTrue(bundle.is_file(), bundle)
+            self.assertEqual(bundle.name, f'{compound["compound_id"]}.zip')
+        with_pdb = next(c for c in self.compounds if c["structure_download"]["complex_pdb_count"])
+        without_pdb = next(c for c in self.compounds if not c["structure_download"]["complex_pdb_count"])
+        for compound, expect_pdb in ((with_pdb, True), (without_pdb, False)):
+            with zipfile.ZipFile(SITE / compound["structure_download"]["bundle_url"]) as archive:
+                members = archive.namelist()
+                self.assertIn(f'ligand/{compound["compound_id"]}.sdf', members)
+                self.assertEqual(any(name.startswith("complexes/") and name.endswith(".pdb") for name in members), expect_pdb)
 
     def test_distance_matrix(self):
         with (SITE / "downloads/classA286_distance_matrix.csv").open(newline="") as handle:

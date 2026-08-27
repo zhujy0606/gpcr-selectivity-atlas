@@ -6,6 +6,7 @@
   <meta name="description" content="GPCR表面差异、受体对热点、种子与PocketXMol化合物的公开计算证据数据库">
   <title>GPCR Selectivity Atlas</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="seed-lineage.css">
 </head>
 <body>
   <header class="topbar">
@@ -19,8 +20,8 @@
       <a href="#receptors">受体</a>
       <a href="#surface">全局表面</a>
       <a href="#pairs">163对与热点</a>
-      <a href="#seeds">种子</a>
-      <a href="#compounds">904化合物</a>
+      <a href="#seeds">输入种子</a>
+      <a href="#compounds">904最终候选</a>
       <a href="#structures">活性结构</a>
       <a href="#downloads">下载</a>
     </nav>
@@ -49,7 +50,7 @@
         <article><b>01</b><h3>dMaSIF表面</h3><p>287个受体资产清单与286×286全局距离。</p></article>
         <i>→</i><article><b>02</b><h3>163组受体对</h3><p>每组冻结Top 3 BW差异热点。</p></article>
         <i>→</i><article><b>03</b><h3>亲本种子</h3><p>fast-mode与三次detail-mode对接证据。</p></article>
-        <i>→</i><article><b>04</b><h3>904生成分子</h3><p>性质、ADMET、姿势、MM/GBSA与最终状态。</p></article>
+        <i>→</i><article><b>04</b><h3>904最终候选</h3><p>采样稳健且对接优于输入种子；111个为更严格的终态精选子集。</p></article>
       </div>
       <aside class="notice"><strong>解释边界</strong><span>本网站汇总计算预测，用于研究优先级排序；不等同实验活性、选择性、安全性或临床有效性。</span></aside>
     </section>
@@ -71,26 +72,26 @@
     </section>
 
     <section id="pairs" class="page">
-      <div class="page-head"><p class="eyebrow">SELECTED RECEPTOR PAIRS</p><h1>163组受体对与Top 3热点</h1><p>每组显示全局表面距离、三个最大局部指纹差异BW位点、双向任务终态及相关生成分子。</p></div>
+      <div class="page-head"><p class="eyebrow">SELECTED RECEPTOR PAIRS</p><h1>163组受体对与Top 3热点</h1><p>每组显示全局表面距离、三个最大局部指纹差异BW位点、PocketXMol输入种子ZINC号及904最终候选分布。</p></div>
       <div class="toolbar"><label>搜索受体对<input id="pair-search" type="search" placeholder="UniProt、受体名称或BW位点"></label><span id="pair-count"></span></div>
       <div id="pair-table" class="data-table"></div>
     </section>
 
     <section id="seeds" class="page">
-      <div class="page-head"><p class="eyebrow">PARENT SEEDS</p><h1>PocketXMol亲本种子</h1><p>138个唯一ZINC种子在178个有向任务中的冻结记录；同一化学种子跨任务时独立保留。</p></div>
+      <div class="page-head"><p class="eyebrow">POCKETXMOL INPUT SEEDS</p><h1>PocketXMol输入种子</h1><p>明确呈现138个唯一ZINC号及其178个有向任务记录；同一化学种子跨任务时独立保留。</p></div>
       <div class="toolbar"><label>搜索种子<input id="seed-search" type="search" placeholder="ZINC、任务、受体或BW位点"></label><span id="seed-count"></span></div>
       <div id="seed-table" class="data-table"></div>
     </section>
 
     <section id="compounds" class="page">
-      <div class="page-head"><p class="eyebrow">POCKETXMOL GENERATIONS</p><h1>904个稳健改善化合物</h1><p>保留全部采样稳健且对接DD优于亲本种子的分子，并叠加438、323、141和111阶段标签。</p></div>
+      <div class="page-head"><p class="eyebrow">POCKETXMOL FINAL CANDIDATES</p><h1>904个PocketXMol最终候选</h1><p>904个分子构成本网站的最终候选集合：均满足采样稳健且对接DD优于输入种子。438、323、141和111表示逐步加严的下游证据子集，其中111为严格终态精选。</p></div>
       <div class="compound-controls">
         <label>搜索<input id="compound-search" type="search" placeholder="A6PX、ZINC、受体、任务或SMILES"></label>
-        <label>证据阶段<select id="compound-stage"><option value="all">全部904</option><option value="shortlist">跨域短名单438</option><option value="baseline">完整MM/GBSA基线323</option><option value="dual">双端改善141</option><option value="final">最终111</option></select></label>
+        <label>证据子集<select id="compound-stage"><option value="all">全部最终候选904</option><option value="complex">含复合物PDB 438</option><option value="shortlist">跨域短名单438</option><option value="baseline">完整MM/GBSA基线323</option><option value="dual">双端改善141</option><option value="final">严格终态精选111</option></select></label>
         <label>MW上限<input id="mw-max" type="number" value="700" min="0" step="10"></label>
         <label>cLogP上限<input id="logp-max" type="number" value="8" min="-5" step="0.5"></label>
       </div>
-      <div class="toolbar compact"><span id="compound-count"></span><small>点击任一化合物查看三次对接、ADMET及证据详情</small></div>
+      <div class="toolbar compact"><span id="compound-count"></span><small>每条记录均显示对应的PocketXMol输入种子ZINC号；点击查看完整谱系与证据</small></div>
       <div id="compound-table" class="data-table"></div>
     </section>
 
@@ -107,8 +108,9 @@
         <a href="downloads/receptors.csv" download><b>CSV</b><h3>受体资产清单</h3><p>287个受体、最近邻、资产计数与公开状态。</p></a>
         <a href="downloads/classA286_distance_matrix.csv" download><b>CSV</b><h3>全局距离矩阵</h3><p>286×286 dMaSIF表面指纹距离。</p></a>
         <a href="downloads/receptor_pairs_top3.csv" download><b>CSV</b><h3>163组Top 3热点</h3><p>489个BW局部差异位点及终态。</p></a>
-        <a href="downloads/seeds.csv" download><b>CSV</b><h3>亲本种子</h3><p>178条有向任务×种子对接证据。</p></a>
-        <a href="downloads/compounds_904.csv" download><b>CSV</b><h3>904个生成分子</h3><p>性质、对接、ADMET与筛选标签。</p></a>
+        <a href="downloads/seeds.csv" download><b>CSV</b><h3>PocketXMol输入种子</h3><p>178条有向任务×ZINC种子对接证据。</p></a>
+        <a href="downloads/compounds_904.csv" download><b>CSV</b><h3>904个最终候选</h3><p>输入种子ZINC号、性质、对接、ADMET与下游子集标签。</p></a>
+        <a href="downloads/structures/manifest.json" download><b>ZIP × 904</b><h3>候选结构文件</h3><p>每个候选1个配体SDF；其中438个候选含共1,444个计算复合物PDB。具体链接见候选详情。</p></a>
         <a href="downloads/active_structure_references.csv" download><b>CSV</b><h3>结构参考</h3><p>36条GPCRdb活性/变构结构参考。</p></a>
       </div>
       <div class="methods-grid">

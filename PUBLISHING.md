@@ -2,11 +2,11 @@
 
 ## 平台决定
 
-- 网页与小型CSV/JSON：GitHub Pages；
+- 网页、CSV/JSON及按候选拆分的结构ZIP：GitHub Pages；
 - 约1.1 GB dMaSIF原始资产：Zenodo；
 - 可选高速镜像：Cloudflare R2，不作为学术主档案。
 
-网站仅约4.2 MB，适合静态托管。大型资产不进入Git仓库；Zenodo记录负责永久版本、DOI、作者、许可证和推荐引用。网页中的每个原始资产下载链接最终指向Zenodo版本记录。
+网站约151 MB，其中约146 MB为904个按候选拆分的结构ZIP；每个ZIP均远低于GitHub单文件限制，适合静态托管。约1.1 GB dMaSIF资产不进入Git仓库；Zenodo记录负责永久版本、DOI、作者、许可证和推荐引用。网页中的每个原始dMaSIF资产下载链接最终指向Zenodo版本记录。
 
 ## GitHub Pages发布
 
@@ -28,7 +28,7 @@
 
 建议一个Zenodo Dataset记录，文件控制在三个以内：
 
-1. `gpcr_selectivity_atlas_v0.1.0_public_tables.zip`；
+1. `gpcr_selectivity_atlas_v0.1.0_public_tables.zip`（含904个结构ZIP）；
 2. `gpcr_selectivity_atlas_v0.1.0_dmasif_assets.zip`；
 3. `SHA256SUMS.txt`。
 
