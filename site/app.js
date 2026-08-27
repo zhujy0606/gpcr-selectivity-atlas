@@ -6,7 +6,6 @@ const includes=(values,query)=>values.join(' ').toLowerCase().includes(query.tri
 const badge=(text,kind='')=>`<span class="badge ${kind}">${esc(text)}</span>`;
 const boolBadge=(value,yes='是',no='否')=>`<span class="badge ${value?'good':''}">${value?yes:no}</span>`;
 const table=(headers,rows,empty='无匹配记录')=>`<table><thead><tr>${headers.map(header=>`<th>${header}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.join(''):`<tr><td class="empty-cell" colspan="${headers.length}">${empty}</td></tr>`}</tbody></table>`;
-const evidenceLabel=compound=>compound.evidence.strict_final_selected_111?badge('严格精选111','final'):compound.evidence.mmgbsa_dual_endpoint_improved?badge('双端MM/GBSA改善141','good'):compound.evidence.mmgbsa_baseline_complete?badge('基线完整323'):compound.evidence.cross_domain_shortlist?badge('跨域短名单438','warn'):badge('robust最终候选904');
 
 async function load(){
   const names=['summary','receptors','pairs','seeds','compounds'];
@@ -84,7 +83,7 @@ function renderPairs(){
   ],query));
   $('#pair-count').textContent=`${items.length} / ${state.pairs.length} 对受体`;
   $('#pair-table').innerHTML=table(
-    ['排名','受体A','受体B','dMaSIF/MaSIF距离','Top 3差异热点','输入种子任务','robust生成分子','严格精选','关联表'],
+    ['排名','受体A','受体B','dMaSIF/MaSIF距离','Top 3差异热点','输入种子任务','robust生成分子','关联表'],
     items.map(pair=>`<tr class="clickable" data-pair="${pair.pair_id}">
       <td><b>#${pair.rank}</b></td>
       <td><b>${esc(pair.receptor_a.name)}</b><br><span class="mono">${pair.receptor_a.uniprot}</span></td>
@@ -93,7 +92,6 @@ function renderPairs(){
       <td>${pair.hotspots.map(hotspot=>badge(hotspot.bw,'good')).join(' ')}</td>
       <td><b>${pairSeeds(pair.pair_id).length}</b><br><small>${pair.input_seed_zinc_ids.length}个ZINC</small></td>
       <td><b class="molecule-count">${pairMolecules(pair.pair_id).length}</b></td>
-      <td>${pair.strict_final_selected_count}</td>
       <td><span class="row-action">打开三张表 →</span></td>
     </tr>`)
   );
@@ -153,12 +151,10 @@ function compoundPanel(pair,compounds){
       <td><b>${fmt(compound.docking.dd_median,3)}</b></td>
       <td>${fmt(compound.docking.dd_worst,3)}</td>
       <td><b>${fmt(compound.docking.dd_change_vs_seed,3)}</b></td>
-      <td>${boolBadge(compound.docking.both_pose_stable,'双端稳定','未双稳')}</td>
-      <td>${evidenceLabel(compound)}</td>
       <td><a class="structure-link" href="${esc(structure.bundle_url)}" download title="下载${compound.compound_id}结构包">${structureText} ↓</a></td>
     </tr>`;
   });
-  return `<div class="table-explainer"><b>robust选择性生成分子</b><span>这里展示该受体对在904个最终候选集合中的全部分子；结构包含配体SDF，438子集另含计算复合物PDB。</span></div><div class="data-table evidence-table wide-table molecule-table">${table(['生成分子 / SMILES','选择性方向','输入种子ZINC','与种子相似度','MW','cLogP','QED','SA','detail DD','worst DD','ΔDD vs seed','姿势','下游证据','结构下载'],rows,'该受体对在904集合中没有robust生成分子')}</div>`;
+  return `<div class="table-explainer"><b>robust选择性生成分子</b><span>这里展示该受体对在904个robust最终候选集合中的全部分子；结构下载包含配体SDF，并在可用时包含计算复合物PDB。</span></div><div class="data-table evidence-table wide-table molecule-table">${table(['生成分子 / SMILES','选择性方向','输入种子ZINC','与种子相似度','MW','cLogP','QED','SA','detail DD','worst DD','ΔDD vs seed','结构下载'],rows,'该受体对在904集合中没有robust生成分子')}</div>`;
 }
 
 function showPair(pair){
@@ -175,7 +171,6 @@ function showPair(pair){
       <span><small>Top差异热点</small><b>${esc(pair.hotspots[0]?.bw)}</b></span>
       <span><small>输入种子任务</small><b>${seeds.length}</b></span>
       <span><small>robust生成分子</small><b>${compounds.length}</b></span>
-      <span><small>严格精选111子集</small><b>${pair.strict_final_selected_count}</b></span>
     </div>
     <div class="evidence-tabs" role="tablist" aria-label="受体对关联数据表">
       <button class="evidence-tab active" role="tab" aria-selected="true" data-panel-target="hotspots">Top 3热点 <b>${pair.hotspots.length}</b></button>

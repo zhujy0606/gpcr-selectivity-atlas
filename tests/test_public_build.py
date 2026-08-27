@@ -90,6 +90,10 @@ class PublicBuildTest(unittest.TestCase):
         self.assertIn("输入种子", javascript)
         self.assertIn("robust生成分子", javascript)
         self.assertIn("structure.bundle_url", javascript)
+        self.assertNotIn("严格精选", html + javascript)
+        self.assertNotIn("pair.strict_final_selected_count", javascript)
+        self.assertNotIn("evidenceLabel", javascript)
+        self.assertIn("'ΔDD vs seed','结构下载'", javascript)
 
     def test_structure_downloads(self):
         self.assertTrue(all(compound["structure_download"]["ligand_sdf_count"] == 1 for compound in self.compounds))

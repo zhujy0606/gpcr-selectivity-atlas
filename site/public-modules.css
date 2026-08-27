@@ -280,7 +280,7 @@
 
 .pair-summary-strip {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   margin-bottom: 20px;
   border: 1px solid var(--line);
   background: #f1f2ec;
@@ -472,16 +472,19 @@ footer a {
     justify-content: flex-start;
   }
 
-  .pair-summary-strip,
+  .pair-summary-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
   .receptor-summary-strip {
     grid-template-columns: repeat(3, 1fr);
   }
 
-  .pair-summary-strip > span:nth-child(3) {
+  .pair-summary-strip > span:nth-child(even) {
     border-right: 0;
   }
 
-  .pair-summary-strip > span:nth-child(n+4) {
+  .pair-summary-strip > span:nth-child(n+3) {
     border-top: 1px solid var(--line);
   }
 }
