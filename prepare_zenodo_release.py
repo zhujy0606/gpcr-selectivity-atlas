@@ -25,7 +25,10 @@ def sha256(path: Path) -> str:
 
 
 def add_tree(archive: zipfile.ZipFile, source: Path, prefix: str) -> None:
-    for path in sorted(item for item in source.rglob("*") if item.is_file()):
+    for path in sorted(
+        item for item in source.rglob("*")
+        if item.is_file() and item.name != ".DS_Store" and "__MACOSX" not in item.parts
+    ):
         archive.write(path, Path(prefix) / path.relative_to(source))
 
 
