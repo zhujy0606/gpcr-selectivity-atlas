@@ -1,6 +1,11 @@
 # GPCR Selectivity Atlas
 
-这是一个由项目冻结证据自动生成的静态公开数据库。首版整合287个受体的dMaSIF资产清单、286×286全局表面距离矩阵、163组受体对及489个局部热点、178条“有向任务×PocketXMol输入种子”记录、138个唯一ZINC输入种子，以及904个PocketXMol最终候选及其对接、理化、ADMET、姿势与MM/GBSA状态。111个分子作为更严格的终态精选子集单独标注。每个候选均提供配体SDF结构包；进入MM/GBSA的438个候选还提供合计1,444个目标/脱靶计算复合物PDB。
+这是一个由项目冻结证据自动生成的静态公开数据库。公众页面收敛为两个表格化模块：
+
+1. **287受体 dMaSIF 数据**：逐受体汇总表面坐标、embedding、VTK资产、完整性、最近表面邻居和全局距离，并可展开文件级清单。
+2. **163对受体与选择性分子**：逐受体对汇总dMaSIF/MaSIF距离；点击任一受体对，可在三张关联表中查看Top 3差异热点、PocketXMol输入种子和该受体对对应的robust生成分子。
+
+第二模块完整纳入904个PocketXMol最终候选及其输入种子ZINC号、对接、理化、姿势和MM/GBSA证据。111个分子作为更严格的终态精选子集单独标注。每个候选均提供配体SDF结构包；进入MM/GBSA的438个候选还提供合计1,444个目标/脱靶计算复合物PDB。
 
 - 公开网站：https://zhujy0606.github.io/gpcr-selectivity-atlas/
 - GitHub仓库：https://github.com/zhujy0606/gpcr-selectivity-atlas
@@ -30,4 +35,4 @@ python3 -m http.server 8080
 
 ## 发布边界
 
-当前站点已经通过GitHub Pages公开。候选详情中的结构下载包按A6PX ID组织，ZIP内含配体SDF以及可用的计算复合物PDB；每个包和内部结构文件均记录SHA-256。约1.1 GB的dMaSIF二进制资产只发布元数据清单；应在确认再分发条款后上传Zenodo，再回填公开URL和SHA-256。活性结构页面目前只有36条结构参考，系统性活性态结构相似度尚未计算。
+当前站点已经通过GitHub Pages公开。受体对的robust分子表中，结构下载包按A6PX ID组织，ZIP内含配体SDF以及可用的计算复合物PDB；每个包和内部结构文件均记录SHA-256。约1.1 GB的dMaSIF二进制资产当前只发布元数据清单；应在确认再分发条款后上传Zenodo，再回填公开URL和SHA-256。

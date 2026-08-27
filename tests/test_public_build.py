@@ -68,6 +68,29 @@ class PublicBuildTest(unittest.TestCase):
         self.assertEqual(sum(pair["final_candidate_count"] for pair in self.pairs), 904)
         self.assertEqual(sum(pair["strict_final_selected_count"] for pair in self.pairs), 111)
 
+        pair_ids = {pair["pair_id"] for pair in self.pairs}
+        self.assertTrue(all(compound["pair_id"] in pair_ids for compound in self.compounds))
+        linked_counts = {
+            pair_id: sum(compound["pair_id"] == pair_id for compound in self.compounds)
+            for pair_id in pair_ids
+        }
+        self.assertTrue(all(
+            linked_counts[pair["pair_id"]] == pair["final_candidate_count"]
+            for pair in self.pairs
+        ))
+
+    def test_public_interface_is_two_module_table_catalog(self):
+        html = (SITE / "index.html").read_text()
+        javascript = (SITE / "app.js").read_text()
+        pages = re.findall(r'<section id="([^"]+)" class="page', html)
+        self.assertEqual(pages, ["overview", "receptors", "pairs"])
+        self.assertIn("287受体 dMaSIF 数据", html)
+        self.assertIn("163对受体与选择性分子", html)
+        self.assertIn("Top 3热点", javascript)
+        self.assertIn("输入种子", javascript)
+        self.assertIn("robust生成分子", javascript)
+        self.assertIn("structure.bundle_url", javascript)
+
     def test_structure_downloads(self):
         self.assertTrue(all(compound["structure_download"]["ligand_sdf_count"] == 1 for compound in self.compounds))
         self.assertEqual(sum(compound["structure_download"]["complex_pdb_count"] > 0 for compound in self.compounds), 438)

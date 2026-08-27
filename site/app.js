@@ -1,67 +1,240 @@
-const state={summary:null,receptors:[],surface:null,pairs:[],seeds:[],compounds:[],structures:null,provenance:null};
-const $=s=>document.querySelector(s);const esc=v=>String(v??'—').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-const fmt=(v,n=2)=>v===null||v===undefined||v===''?'—':typeof v==='number'?v.toLocaleString('en-US',{maximumFractionDigits:n}):esc(v);
-const fileSize=v=>v<1048576?`${(v/1024).toFixed(1)} KB`:`${(v/1048576).toFixed(1)} MB`;
-const boolBadge=(v,yes='是',no='否')=>`<span class="badge ${v?'good':''}">${v?yes:no}</span>`;
-const badge=(text,kind='')=>`<span class="badge ${kind}">${esc(text)}</span>`;
-const table=(headers,rows)=>`<table><thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
+const state={summary:null,receptors:[],pairs:[],seeds:[],compounds:[]};
+const $=selector=>document.querySelector(selector);
+const esc=value=>String(value??'—').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+const fmt=(value,digits=2)=>value===null||value===undefined||value===''?'—':typeof value==='number'?value.toLocaleString('en-US',{maximumFractionDigits:digits}):esc(value);
 const includes=(values,query)=>values.join(' ').toLowerCase().includes(query.trim().toLowerCase());
+const badge=(text,kind='')=>`<span class="badge ${kind}">${esc(text)}</span>`;
+const boolBadge=(value,yes='是',no='否')=>`<span class="badge ${value?'good':''}">${value?yes:no}</span>`;
+const table=(headers,rows,empty='无匹配记录')=>`<table><thead><tr>${headers.map(header=>`<th>${header}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.join(''):`<tr><td class="empty-cell" colspan="${headers.length}">${empty}</td></tr>`}</tbody></table>`;
+const evidenceLabel=compound=>compound.evidence.strict_final_selected_111?badge('严格精选111','final'):compound.evidence.mmgbsa_dual_endpoint_improved?badge('双端MM/GBSA改善141','good'):compound.evidence.mmgbsa_baseline_complete?badge('基线完整323'):compound.evidence.cross_domain_shortlist?badge('跨域短名单438','warn'):badge('robust最终候选904');
 
 async function load(){
-  const names=['summary','receptors','global_surface','pairs','seeds','compounds','active_structures','provenance'];
-  const data=await Promise.all(names.map(n=>fetch(`data/${n}.json`).then(r=>{if(!r.ok)throw new Error(`${n}: ${r.status}`);return r.json()})));
-  [state.summary,state.receptors,state.surface,state.pairs,state.seeds,state.compounds,state.structures,state.provenance]=data;
-  renderAll();
+  const names=['summary','receptors','pairs','seeds','compounds'];
+  const data=await Promise.all(names.map(name=>fetch(`data/${name}.json`).then(response=>{
+    if(!response.ok)throw new Error(`${name}: ${response.status}`);
+    return response.json();
+  })));
+  [state.summary,state.receptors,state.pairs,state.seeds,state.compounds]=data;
+  renderReceptors();
+  renderPairs();
+  $('#footer-version').textContent=`${state.summary.version} · ${state.summary.build_date}`;
 }
 
-function renderAll(){renderOverview();renderReceptors();renderSurface();renderPairs();renderSeeds();renderCompounds();renderStructures();renderDownloads();$('#footer-version').textContent=`${state.summary.version} · ${state.summary.build_date}`;}
-function renderOverview(){
-  const c=state.summary.counts;const cards=[['surface_receptors','dMaSIF受体'],['selected_receptor_pairs','重点受体对'],['hotspots','Top 3热点'],['unique_seed_molecules','唯一输入种子'],['final_candidates','最终候选'],['strict_final_selected','严格终态精选']];
-  $('#summary-cards').classList.remove('loading-block');$('#summary-cards').innerHTML=cards.map(([k,l])=>`<article class="summary-card"><b>${fmt(c[k],0)}</b><span>${l}</span></article>`).join('');
-}
 function renderReceptors(){
-  const q=$('#receptor-search').value;const items=state.receptors.filter(r=>includes([r.uniprot,r.name,r.subfamily],q));$('#receptor-count').textContent=`${items.length} / ${state.receptors.length} 个受体`;
-  $('#receptor-table').innerHTML=table(['UniProt','名称','dMaSIF资产','完整','最近邻','距离','进入163对','原始下载'],items.map(r=>`<tr class="clickable" data-receptor="${r.uniprot}"><td class="mono">${r.uniprot}</td><td>${esc(r.name)}</td><td>${r.surface_asset_count} · ${(r.surface_asset_bytes/1048576).toFixed(1)} MB</td><td>${boolBadge(r.core_assets_complete)}</td><td class="mono">${esc(r.nearest_surface_neighbor?.uniprot)}</td><td>${fmt(r.nearest_surface_neighbor?.distance,4)}</td><td>${r.selected_pair_count}</td><td>${badge(r.public_raw_asset_status==='pending_external_archive'?'档案待发布':'可下载','warn')}</td></tr>`));
-  document.querySelectorAll('[data-receptor]').forEach(el=>el.onclick=()=>showReceptor(state.receptors.find(r=>r.uniprot===el.dataset.receptor)));
+  const query=$('#receptor-search').value;
+  const items=state.receptors.filter(receptor=>includes([receptor.uniprot,receptor.name,receptor.subfamily],query));
+  $('#receptor-count').textContent=`${items.length} / ${state.receptors.length} 个受体`;
+  $('#receptor-table').innerHTML=table(
+    ['UniProt','受体名称','亚家族','dMaSIF资产','核心资产','最近表面邻居','全局距离','进入163对','详情'],
+    items.map(receptor=>`<tr class="clickable" data-receptor="${receptor.uniprot}">
+      <td class="mono"><b>${receptor.uniprot}</b></td>
+      <td>${esc(receptor.name||'未注释')}</td>
+      <td>${esc(receptor.subfamily||'—')}</td>
+      <td><b>${receptor.surface_asset_count}</b><br><small>${(receptor.surface_asset_bytes/1048576).toFixed(1)} MB</small></td>
+      <td>${boolBadge(receptor.core_assets_complete,'完整','缺失')}</td>
+      <td class="mono">${esc(receptor.nearest_surface_neighbor?.uniprot)}</td>
+      <td>${fmt(receptor.nearest_surface_neighbor?.distance,4)}</td>
+      <td>${receptor.selected_pair_count}</td>
+      <td><span class="row-action">查看资产表 →</span></td>
+    </tr>`)
+  );
+  document.querySelectorAll('[data-receptor]').forEach(row=>{
+    row.onclick=()=>showReceptor(state.receptors.find(receptor=>receptor.uniprot===row.dataset.receptor));
+  });
 }
-function showReceptor(r){showDialog(`<div class="detail-head"><p class="eyebrow">RECEPTOR</p><h2>${esc(r.name||r.uniprot)}</h2><p class="mono">${r.uniprot}</p></div><div class="detail-grid"><div class="detail-card"><h3>表面摘要</h3><div class="kv"><span>资产数</span><b>${r.surface_asset_count}</b><span>总大小</span><b>${(r.surface_asset_bytes/1048576).toFixed(1)} MB</b><span>核心资产完整</span><b>${r.core_assets_complete?'是':'否'}</b><span>进入163对</span><b>${r.selected_pair_count}</b></div></div><div class="detail-card"><h3>全局邻域</h3><div class="kv"><span>最近邻</span><b>${esc(r.nearest_surface_neighbor?.uniprot)}</b><span>dMaSIF距离</span><b>${fmt(r.nearest_surface_neighbor?.distance,4)}</b><span>MDS坐标</span><b>${r.mds?`${fmt(r.mds.x)}, ${fmt(r.mds.y)}`:'未覆盖'}</b></div></div></div><h3>本地冻结资产清单</h3><div class="data-table">${table(['文件','类型','大小'],r.assets.map(a=>`<tr><td class="mono">${esc(a.filename)}</td><td>${esc(a.kind)}</td><td>${(a.size_bytes/1048576).toFixed(2)} MB</td></tr>`))}</div>`)}
-function renderSurface(){
-  const d=state.surface.distance_summary,s=state.surface.structure_stats;$('#surface-stats').innerHTML=[['矩阵受体',state.surface.matrix_receptor_count],['无序组合',state.surface.matrix_pair_count],['最小距离',d.minimum],['中位距离',d.median],['均值',d.mean],['最近邻同亚家族',`${(s.nn_same_subfamily_frac*100).toFixed(1)}%`]].map(([l,v])=>`<article class="summary-card"><b>${fmt(v,4)}</b><span>${l}</span></article>`).join('');
-  const pts=state.surface.mds,xv=pts.map(p=>p.x),yv=pts.map(p=>p.y),xmin=Math.min(...xv),xmax=Math.max(...xv),ymin=Math.min(...yv),ymax=Math.max(...yv);$('#mds-plot').innerHTML=pts.map(p=>`<circle class="mds-dot ${p.selected_pair_count?'selected':''}" cx="${30+(p.x-xmin)/(xmax-xmin)*700}" cy="${390-(p.y-ymin)/(ymax-ymin)*360}" r="${p.selected_pair_count?4:2.5}"><title>${p.uniprot} · ${p.subfamily||'unlabelled'}</title></circle>`).join('');
-  const hist=state.surface.distance_histogram,max=Math.max(...hist.map(b=>b.count));$('#distance-histogram').innerHTML=hist.map(b=>`<span style="height:${Math.max(2,b.count/max*100)}%" data-label="${b.start}–${b.end}: ${b.count}"></span>`).join('');
-}
-function renderPairs(){
-  const q=$('#pair-search').value;const items=state.pairs.filter(p=>includes([p.pair_id,p.receptor_a.name,p.receptor_b.name,...p.input_seed_zinc_ids,...p.hotspots.flatMap(h=>[h.bw,h.residues])],q));$('#pair-count').textContent=`${items.length} / ${state.pairs.length} 组`;
-  $('#pair-table').innerHTML=table(['排名','受体A','受体B','dMaSIF距离','Top 3 BW热点','输入种子ZINC','最终候选','严格精选'],items.map(p=>`<tr class="clickable" data-pair="${p.pair_id}"><td>${p.rank}</td><td><b>${esc(p.receptor_a.name)}</b><br><span class="mono">${p.receptor_a.uniprot}</span></td><td><b>${esc(p.receptor_b.name)}</b><br><span class="mono">${p.receptor_b.uniprot}</span></td><td>${fmt(p.surface_distance,3)}</td><td>${p.hotspots.map(h=>badge(h.bw,'good')).join(' ')}</td><td>${p.input_seed_zinc_ids.length?p.input_seed_zinc_ids.map(z=>badge(z,'seed')).join(' '):'—'}</td><td><b>${p.final_candidate_count}</b></td><td>${p.strict_final_selected_count}</td></tr>`));
-  document.querySelectorAll('[data-pair]').forEach(el=>el.onclick=()=>showPair(state.pairs.find(p=>p.pair_id===el.dataset.pair)));
-}
-function showPair(p){showDialog(`<div class="detail-head"><p class="eyebrow">RECEPTOR PAIR · RANK ${p.rank}</p><h2>${esc(p.receptor_a.name)} / ${esc(p.receptor_b.name)}</h2><p class="mono">${p.pair_id} · dMaSIF distance ${fmt(p.surface_distance,3)}</p></div><div class="seed-lineage"><span>POCKETXMOL INPUT SEED</span><div>${p.input_seed_zinc_ids.length?p.input_seed_zinc_ids.map(z=>`<b class="mono">${esc(z)}</b>`).join(''):'<b>本组904集合中无对应分子</b>'}</div></div><h3>Top 3局部差异热点</h3><div class="hotspot-list">${p.hotspots.map(h=>`<article class="hotspot"><small>RANK ${h.rank}</small><b>${esc(h.bw)}</b><p>${esc(h.residues)}</p><small>fingerprint Δ ${fmt(h.fingerprint_difference,3)}</small></article>`).join('')}</div><h3>计算流程状态</h3><div class="detail-grid"><div class="detail-card"><div class="kv"><span>种子任务记录</span><b>${p.pocketxmol_seed_record_count}</b><span>最终候选（904集合）</span><b>${p.final_candidate_count}</b><span>严格终态精选（111子集）</span><b>${p.strict_final_selected_count}</b><span>无向终态</span><b>${esc(p.pair_terminal_status)}</b></div></div><div class="detail-card"><h3>双向任务</h3>${p.directions.map(d=>`<p><b>${esc(d.direction)}</b> · ${esc(d.seed_zinc_id||'无ZINC种子')} · ${esc(d.terminal_status)} · 严格精选 ${d.final_selected_count}</p>`).join('')||'<p>无方向记录</p>'}</div></div>`)}
-function renderSeeds(){
-  const q=$('#seed-search').value;const items=state.seeds.filter(s=>includes([s.seed_record_id,s.seed_zinc_id,s.task,s.pair_id,s.target_name,s.offtarget_name,s.hotspot_bw],q));$('#seed-count').textContent=`${items.length} / ${state.seeds.length} 条任务记录 · 138个唯一种子`;
-  $('#seed-table').innerHTML=table(['PocketXMol输入种子ZINC','有向任务','热点','fast DD','detail DD','worst DD','SD','对应最终候选'],items.map(s=>`<tr class="clickable" data-seed="${esc(s.seed_record_id)}"><td><span class="seed-chip"><small>INPUT SEED</small><b class="mono">${esc(s.seed_zinc_id)}</b></span><small>${esc(s.bidirectional_seed_id)}</small></td><td><b>${esc(s.target_name||s.target_uniprot)} → ${esc(s.offtarget_name||s.offtarget_uniprot)}</b><br><small>${esc(s.task)}</small></td><td>${badge(s.hotspot_bw,'good')}</td><td>${fmt(s.fast.dd,3)}</td><td>${fmt(s.detail.dd_median,3)}</td><td>${fmt(s.detail.dd_worst,3)}</td><td>${fmt(s.detail.dd_sd,3)}</td><td>${s.generated_compound_count}</td></tr>`));
-  document.querySelectorAll('[data-seed]').forEach(el=>el.onclick=()=>showSeed(state.seeds.find(s=>s.seed_record_id===el.dataset.seed)));
-}
-function showSeed(s){showDialog(`<div class="detail-head"><p class="eyebrow">POCKETXMOL INPUT SEED · ZINC</p><h2>${esc(s.seed_zinc_id)}</h2><p>${esc(s.target_name||s.target_uniprot)} → ${esc(s.offtarget_name||s.offtarget_uniprot)} · ${esc(s.task)}</p></div><div class="detail-grid"><div class="detail-card"><h3>fast-mode</h3><div class="kv"><span>目标</span><b>${fmt(s.fast.target,3)}</b><span>脱靶</span><b>${fmt(s.fast.offtarget,3)}</b><span>DD</span><b>${fmt(s.fast.dd,3)}</b><span>排名</span><b>${fmt(s.fast.rank,0)}</b></div></div><div class="detail-card"><h3>detail-mode三次重复汇总</h3><div class="kv"><span>目标中位数</span><b>${fmt(s.detail.target_median,3)}</b><span>脱靶中位数</span><b>${fmt(s.detail.offtarget_median,3)}</b><span>DD中位数</span><b>${fmt(s.detail.dd_median,3)}</b><span>worst DD</span><b>${fmt(s.detail.dd_worst,3)}</b><span>DD SD</span><b>${fmt(s.detail.dd_sd,3)}</b></div></div></div><p><strong>对应的904最终候选：</strong>${s.generated_compound_ids.map(x=>badge(x,s.generated_compound_count>0?'good':'')).join(' ')}</p>`)}
-function compoundPass(c,stage){if(stage==='shortlist')return c.evidence.cross_domain_shortlist;if(stage==='baseline')return c.evidence.mmgbsa_baseline_complete;if(stage==='dual')return c.evidence.mmgbsa_dual_endpoint_improved;if(stage==='final')return c.evidence.final_selected;if(stage==='complex')return c.structure_download.complex_pdb_count>0;return true}
-function renderCompounds(){
-  const q=$('#compound-search').value,stage=$('#compound-stage').value,mw=Number($('#mw-max').value||Infinity),logp=Number($('#logp-max').value||Infinity);const items=state.compounds.filter(c=>compoundPass(c,stage)&&Number(c.properties.MW)<=mw&&Number(c.properties.cLogP)<=logp&&includes([c.compound_id,c.seed_zinc_id,c.task,c.pair_id,c.target_name,c.offtarget_name,c.canonical_smiles],q));$('#compound-count').textContent=`显示 ${items.length} / ${state.compounds.length}`;
-  const view=items.slice(0,300);$('#compound-table').innerHTML=table(['最终候选','目标 → 脱靶','PocketXMol输入种子（ZINC）','MW / cLogP','QED / SA','detail DD','ΔDD vs seed','姿势','结构文件','下游证据子集'],view.map(c=>`<tr class="clickable" data-compound="${c.compound_id}"><td><b class="mono">${c.compound_id}</b><span class="truncate mono" title="${esc(c.canonical_smiles)}">${esc(c.canonical_smiles)}</span></td><td>${esc(c.target_name||c.target_uniprot)} → ${esc(c.offtarget_name||c.offtarget_uniprot)}</td><td><span class="seed-chip"><small>INPUT SEED</small><b class="mono">${esc(c.seed_zinc_id)}</b></span></td><td>${fmt(c.properties.MW,1)} / ${fmt(c.properties.cLogP,2)}</td><td>${fmt(c.properties.QED,2)} / ${fmt(c.properties.SA,2)}</td><td>${fmt(c.docking.dd_median,3)}</td><td>${fmt(c.docking.dd_change_vs_seed,3)}</td><td>${boolBadge(c.docking.both_pose_stable,'双端稳','未双稳')}</td><td>${c.structure_download.complex_pdb_count?badge(`1 SDF + ${c.structure_download.complex_pdb_count} PDB`,'structure'):badge('1 SDF')}</td><td>${c.evidence.strict_final_selected_111?badge('严格精选111','final'):c.evidence.mmgbsa_dual_endpoint_improved?badge('双MM/GBSA改善141','good'):c.evidence.mmgbsa_baseline_complete?badge('基线完整323'):c.evidence.cross_domain_shortlist?badge('跨域短名单438','warn'):badge('最终候选904')}</td></tr>`));
-  if(items.length>300)$('#compound-table').insertAdjacentHTML('beforeend',`<p style="padding:14px">为保持页面流畅，仅显示前300条；请继续筛选或下载完整CSV。</p>`);document.querySelectorAll('[data-compound]').forEach(el=>el.onclick=()=>showCompound(state.compounds.find(c=>c.compound_id===el.dataset.compound)));
-}
-function showCompound(c){
-  const props=Object.entries(c.properties).map(([k,v])=>`<span>${k}</span><b>${fmt(v)}</b>`).join('');
-  const admet=Object.entries(c.admet).map(([k,v])=>`<span>${k}</span><b>${fmt(v,3)}</b>`).join('');
-  const structure=c.structure_download;
-  const pdbRows=structure.complex_pdbs.map(p=>`<tr><td>${p.receptor_role==='target'?'目标受体':'脱靶受体'}</td><td class="mono">${esc(p.receptor_uniprot)}</td><td>cluster ${p.cluster}</td><td class="mono">${esc(p.member.split('/').pop())}</td></tr>`);
-  const structureBlock=`<section class="structure-panel"><div><p class="eyebrow">STRUCTURE DOWNLOAD</p><h3>结构文件下载</h3><p>${structure.complex_pdb_count?`结构包含 1 个候选配体 SDF 和 ${structure.complex_pdb_count} 个经审计的 MM/GBSA 受体–配体复合物 PDB。`:'结构包含 1 个候选配体 SDF；该候选未进入438个MM/GBSA复合物子集，因此没有复合物PDB。'}</p><small>计算结构，不是实验解析结构。ZIP SHA-256：<span class="mono">${esc(structure.bundle_sha256)}</span></small></div><a class="structure-download" href="${esc(structure.bundle_url)}" download><b>下载结构包 ZIP</b><span>${fileSize(structure.bundle_size_bytes)} · 1 SDF${structure.complex_pdb_count?` + ${structure.complex_pdb_count} PDB`:''}</span></a></section>${pdbRows.length?`<div class="data-table structure-files">${table(['受体角色','UniProt','姿势簇','ZIP内PDB文件'],pdbRows)}</div>`:''}`;
-  showDialog(`<div class="detail-head"><p class="eyebrow">POCKETXMOL FINAL CANDIDATE · 904 SET</p><h2>${c.compound_id}</h2><p class="mono">${esc(c.canonical_smiles)}</p><p>${esc(c.target_name||c.target_uniprot)} → ${esc(c.offtarget_name||c.offtarget_uniprot)}</p></div><div class="seed-lineage"><span>POCKETXMOL INPUT SEED · ZINC</span><div><b class="mono">${esc(c.seed_zinc_id)}</b><small>seed → ${esc(c.compound_id)}</small></div></div>${structureBlock}<div class="detail-grid"><div class="detail-card"><h3>理化性质</h3><div class="kv">${props}</div></div><div class="detail-card"><h3>证据阶段</h3><div class="kv"><span>最终候选904集合</span><b>是</b><span>跨域短名单438</span><b>${c.evidence.cross_domain_shortlist?'是':'否'}</b><span>种子基线完整323</span><b>${c.evidence.mmgbsa_baseline_complete?'是':'否'}</b><span>MM/GBSA双端改善141</span><b>${c.evidence.mmgbsa_dual_endpoint_improved?'是':'否'}</b><span>严格终态精选111</span><b>${c.evidence.strict_final_selected_111?'是':'否'}</b></div></div><div class="detail-card"><h3>detail-mode三次重复</h3><div class="kv"><span>目标</span><b>${c.docking.target_repeats.map(v=>fmt(v,3)).join(' / ')}</b><span>脱靶</span><b>${c.docking.offtarget_repeats.map(v=>fmt(v,3)).join(' / ')}</b><span>DD</span><b>${c.docking.dd_repeats.map(v=>fmt(v,3)).join(' / ')}</b><span>DD中位数</span><b>${fmt(c.docking.dd_median,3)}</b><span>worst DD</span><b>${fmt(c.docking.dd_worst,3)}</b><span>相对种子变化</span><b>${fmt(c.docking.dd_change_vs_seed,3)}</b></div></div><div class="detail-card"><h3>关键ADMET预测</h3><div class="kv">${admet}</div></div></div>`)
-}
-function renderStructures(){const q=$('#structure-search').value;const items=state.structures.structures.filter(s=>includes([s.pdb_id,s.protein,s.ligand,s.function,...s.bw_sites],q));$('#structure-count').textContent=`${items.length} / ${state.structures.structures.length} 条参考`;$('#structure-table').innerHTML=table(['PDB','蛋白','功能','配体','BW位点数','BW位点'],items.map(s=>`<tr><td class="mono">${s.pdb_id}</td><td>${esc(s.protein)}</td><td>${esc(s.function)}</td><td><span class="truncate" title="${esc(s.ligand)}">${esc(s.ligand)}</span></td><td>${s.bw_site_count}</td><td><span class="truncate mono">${s.bw_sites.join(' · ')}</span></td></tr>`))}
-function renderDownloads(){const p=state.provenance,creator=p.creators?.[0];$('#provenance').innerHTML=`<div class="kv"><span>Atlas版本</span><b>${p.atlas_version}</b><span>构建日期</span><b>${p.build_date}</b><span>作者</span><b>${esc(creator?.name_zh)} / ${esc(creator?.name)}</b><span>单位</span><b>${esc(creator?.affiliation_zh)}</b><span>ORCID</span><b>${esc(creator?.orcid)}</b><span>冻结来源数</span><b>${Object.keys(p.sources).length}</b><span>原始表面资产</span><b>外部档案待发布</b><span>活性结构矩阵</span><b>待计算</b></div><h3>已知限制</h3><ul>${p.limitations.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`}
-function showDialog(html){$('#detail-content').innerHTML=html;$('#detail-dialog').showModal()}
 
-function route(){const id=location.hash.slice(1)||'overview';document.querySelectorAll('.page').forEach(x=>x.classList.toggle('active',x.id===id));document.querySelectorAll('nav a').forEach(x=>x.classList.toggle('active',x.getAttribute('href')===`#${id}`));$('#nav').classList.remove('open');$('#menu-button').setAttribute('aria-expanded','false');window.scrollTo(0,0)}
-window.addEventListener('hashchange',route);$('#menu-button').onclick=()=>{const open=$('#nav').classList.toggle('open');$('#menu-button').setAttribute('aria-expanded',String(open))};$('#dialog-close').onclick=()=>$('#detail-dialog').close();
-['#receptor-search','#pair-search','#seed-search','#compound-search','#mw-max','#logp-max','#structure-search'].forEach(id=>$(id).addEventListener('input',()=>({
-  '#receptor-search':renderReceptors,'#pair-search':renderPairs,'#seed-search':renderSeeds,'#compound-search':renderCompounds,'#mw-max':renderCompounds,'#logp-max':renderCompounds,'#structure-search':renderStructures
-}[id]())));$('#compound-stage').addEventListener('change',renderCompounds);route();load().catch(error=>{$('#summary-cards').innerHTML=`<article class="notice amber"><strong>数据载入失败</strong><span>${esc(error.message)}。请通过HTTP服务器访问本站，不要直接双击HTML文件。</span></article>`;console.error(error)});
+function showReceptor(receptor){
+  const assetRows=receptor.assets.map(asset=>`<tr>
+    <td class="mono">${esc(asset.filename)}</td>
+    <td>${asset.kind==='npy'?'NumPy数组':asset.kind==='vtk'?'VTK表面':'其他'}</td>
+    <td>${asset.kind==='npy'&&asset.filename.includes('coords')?'表面点坐标':asset.filename.includes('features_emb1')?'dMaSIF embedding 1':asset.filename.includes('features_emb2')?'dMaSIF embedding 2':asset.filename.includes('emb1')?'embedding 1 可视化':'embedding 2 可视化'}</td>
+    <td>${asset.size_bytes?(asset.size_bytes/1048576).toFixed(2)+' MB':'清单已登记'}</td>
+    <td>${badge('冻结资产','good')}</td>
+  </tr>`);
+  showDialog(`
+    <div class="detail-head receptor-detail-head">
+      <p class="eyebrow">MODULE 01 · RECEPTOR SURFACE RECORD</p>
+      <h2>${esc(receptor.name||receptor.uniprot)}</h2>
+      <p class="mono">${receptor.uniprot}</p>
+    </div>
+    <div class="pair-summary-strip receptor-summary-strip">
+      <span><small>dMaSIF资产</small><b>${receptor.surface_asset_count}</b></span>
+      <span><small>冻结大小</small><b>${(receptor.surface_asset_bytes/1048576).toFixed(1)} MB</b></span>
+      <span><small>最近邻</small><b class="mono">${esc(receptor.nearest_surface_neighbor?.uniprot)}</b></span>
+      <span><small>全局距离</small><b>${fmt(receptor.nearest_surface_neighbor?.distance,4)}</b></span>
+      <span><small>进入受体对</small><b>${receptor.selected_pair_count}</b></span>
+    </div>
+    <div class="evidence-section-head">
+      <div><p class="eyebrow">SYSTEMATIC ASSET TABLE</p><h3>dMaSIF文件清单</h3></div>
+      <span>${receptor.core_assets_complete?'核心资产完整':'核心资产存在缺失'}</span>
+    </div>
+    <div class="data-table evidence-table">${table(['文件名','格式','数据内容','大小','状态'],assetRows)}</div>
+    <aside class="notice amber detail-note"><strong>公开状态</strong><span>文件级清单已公开；大型原始二进制资产仍标记为 ${esc(receptor.public_raw_asset_status)}，待外部公开档案固定永久下载地址。</span></aside>
+  `);
+}
+
+function pairMolecules(pairId){return state.compounds.filter(compound=>compound.pair_id===pairId)}
+function pairSeeds(pairId){return state.seeds.filter(seed=>seed.pair_id===pairId)}
+
+function renderPairs(){
+  const query=$('#pair-search').value;
+  const items=state.pairs.filter(pair=>includes([
+    pair.pair_id,pair.receptor_a.uniprot,pair.receptor_a.name,pair.receptor_b.uniprot,pair.receptor_b.name,
+    ...pair.input_seed_zinc_ids,...pair.hotspots.flatMap(hotspot=>[hotspot.bw,hotspot.residues])
+  ],query));
+  $('#pair-count').textContent=`${items.length} / ${state.pairs.length} 对受体`;
+  $('#pair-table').innerHTML=table(
+    ['排名','受体A','受体B','dMaSIF/MaSIF距离','Top 3差异热点','输入种子任务','robust生成分子','严格精选','关联表'],
+    items.map(pair=>`<tr class="clickable" data-pair="${pair.pair_id}">
+      <td><b>#${pair.rank}</b></td>
+      <td><b>${esc(pair.receptor_a.name)}</b><br><span class="mono">${pair.receptor_a.uniprot}</span></td>
+      <td><b>${esc(pair.receptor_b.name)}</b><br><span class="mono">${pair.receptor_b.uniprot}</span></td>
+      <td><b>${fmt(pair.surface_distance,3)}</b></td>
+      <td>${pair.hotspots.map(hotspot=>badge(hotspot.bw,'good')).join(' ')}</td>
+      <td><b>${pairSeeds(pair.pair_id).length}</b><br><small>${pair.input_seed_zinc_ids.length}个ZINC</small></td>
+      <td><b class="molecule-count">${pairMolecules(pair.pair_id).length}</b></td>
+      <td>${pair.strict_final_selected_count}</td>
+      <td><span class="row-action">打开三张表 →</span></td>
+    </tr>`)
+  );
+  document.querySelectorAll('[data-pair]').forEach(row=>{
+    row.onclick=()=>showPair(state.pairs.find(pair=>pair.pair_id===row.dataset.pair));
+  });
+  const linked=state.pairs.reduce((total,pair)=>total+pairMolecules(pair.pair_id).length,0);
+  const orphan=state.compounds.filter(compound=>!state.pairs.some(pair=>pair.pair_id===compound.pair_id)).length;
+  $('#pair-total-check').textContent=linked===904&&orphan===0
+    ?'已核对：163对受体下关联分子合计904个，0个游离记录。'
+    :`当前关联分子${linked}个，未匹配受体对${orphan}个；请查看数据版本。`;
+}
+
+function hotspotPanel(pair){
+  const rows=pair.hotspots.map(hotspot=>`<tr>
+    <td><b>#${hotspot.rank}</b></td>
+    <td>${badge(hotspot.bw,'good')}</td>
+    <td class="mono">${esc(hotspot.residues)}</td>
+    <td><b>${fmt(hotspot.fingerprint_difference,3)}</b></td>
+    <td class="mono">${esc(hotspot.hotspot_id)}</td>
+  </tr>`);
+  return `<div class="table-explainer"><b>Top 3局部差异热点</b><span>按局部表面指纹差异排序；BW为Ballesteros–Weinstein通用编号。</span></div><div class="data-table evidence-table">${table(['热点排名','BW位点','两受体残基','局部指纹差异Δ','热点ID'],rows)}</div>`;
+}
+
+function seedPanel(pair,seeds){
+  const rows=seeds.map(seed=>`<tr>
+    <td><span class="seed-chip"><small>INPUT SEED</small><b class="mono">${esc(seed.seed_zinc_id)}</b></span></td>
+    <td>${esc(seed.target_name||seed.target_uniprot)} → ${esc(seed.offtarget_name||seed.offtarget_uniprot)}<br><small class="mono">${esc(seed.task)}</small></td>
+    <td>${badge(seed.hotspot_bw,'good')}</td>
+    <td>${fmt(seed.fast.target,3)}</td>
+    <td>${fmt(seed.fast.offtarget,3)}</td>
+    <td><b>${fmt(seed.fast.dd,3)}</b></td>
+    <td>${fmt(seed.detail.target_median,3)}</td>
+    <td>${fmt(seed.detail.offtarget_median,3)}</td>
+    <td><b>${fmt(seed.detail.dd_median,3)}</b></td>
+    <td>${fmt(seed.detail.dd_worst,3)}</td>
+    <td>${fmt(seed.detail.dd_sd,3)}</td>
+    <td>${boolBadge(seed.detail.target_pose_stable&&seed.detail.offtarget_pose_stable,'双端稳定','未双稳')}</td>
+    <td><b>${seed.generated_compound_count}</b></td>
+  </tr>`);
+  return `<div class="table-explainer"><b>PocketXMol输入种子</b><span>每一行是一条有向种子任务；保留fast mode及detail mode三次重复汇总。</span></div><div class="data-table evidence-table wide-table">${table(['输入种子ZINC','选择性方向','热点','fast目标','fast脱靶','fast DD','detail目标中位数','detail脱靶中位数','detail DD中位数','worst DD','DD SD','姿势稳定','生成分子数'],rows,'该受体对在904集合中没有关联的输入种子任务')}</div>`;
+}
+
+function compoundPanel(pair,compounds){
+  const rows=compounds.map(compound=>{
+    const structure=compound.structure_download;
+    const structureText=structure.complex_pdb_count?`1 SDF + ${structure.complex_pdb_count} PDB`:'1 SDF';
+    return `<tr>
+      <td><b class="mono">${compound.compound_id}</b><span class="truncate mono molecule-smiles" title="${esc(compound.canonical_smiles)}">${esc(compound.canonical_smiles)}</span></td>
+      <td>${esc(compound.target_name||compound.target_uniprot)} → ${esc(compound.offtarget_name||compound.offtarget_uniprot)}</td>
+      <td><span class="seed-chip compact-seed"><small>INPUT SEED</small><b class="mono">${esc(compound.seed_zinc_id)}</b></span></td>
+      <td>${fmt(compound.similarity_to_seed,3)}</td>
+      <td>${fmt(compound.properties.MW,1)}</td>
+      <td>${fmt(compound.properties.cLogP,2)}</td>
+      <td>${fmt(compound.properties.QED,2)}</td>
+      <td>${fmt(compound.properties.SA,2)}</td>
+      <td><b>${fmt(compound.docking.dd_median,3)}</b></td>
+      <td>${fmt(compound.docking.dd_worst,3)}</td>
+      <td><b>${fmt(compound.docking.dd_change_vs_seed,3)}</b></td>
+      <td>${boolBadge(compound.docking.both_pose_stable,'双端稳定','未双稳')}</td>
+      <td>${evidenceLabel(compound)}</td>
+      <td><a class="structure-link" href="${esc(structure.bundle_url)}" download title="下载${compound.compound_id}结构包">${structureText} ↓</a></td>
+    </tr>`;
+  });
+  return `<div class="table-explainer"><b>robust选择性生成分子</b><span>这里展示该受体对在904个最终候选集合中的全部分子；结构包含配体SDF，438子集另含计算复合物PDB。</span></div><div class="data-table evidence-table wide-table molecule-table">${table(['生成分子 / SMILES','选择性方向','输入种子ZINC','与种子相似度','MW','cLogP','QED','SA','detail DD','worst DD','ΔDD vs seed','姿势','下游证据','结构下载'],rows,'该受体对在904集合中没有robust生成分子')}</div>`;
+}
+
+function showPair(pair){
+  const seeds=pairSeeds(pair.pair_id);
+  const compounds=pairMolecules(pair.pair_id);
+  showDialog(`
+    <div class="detail-head pair-detail-head">
+      <p class="eyebrow">MODULE 02 · RECEPTOR PAIR · RANK ${pair.rank}</p>
+      <h2>${esc(pair.receptor_a.name)} / ${esc(pair.receptor_b.name)}</h2>
+      <p class="mono">${pair.pair_id}</p>
+    </div>
+    <div class="pair-summary-strip">
+      <span><small>dMaSIF/MaSIF距离</small><b>${fmt(pair.surface_distance,3)}</b></span>
+      <span><small>Top差异热点</small><b>${esc(pair.hotspots[0]?.bw)}</b></span>
+      <span><small>输入种子任务</small><b>${seeds.length}</b></span>
+      <span><small>robust生成分子</small><b>${compounds.length}</b></span>
+      <span><small>严格精选111子集</small><b>${pair.strict_final_selected_count}</b></span>
+    </div>
+    <div class="evidence-tabs" role="tablist" aria-label="受体对关联数据表">
+      <button class="evidence-tab active" role="tab" aria-selected="true" data-panel-target="hotspots">Top 3热点 <b>${pair.hotspots.length}</b></button>
+      <button class="evidence-tab" role="tab" aria-selected="false" data-panel-target="seeds">输入种子 <b>${seeds.length}</b></button>
+      <button class="evidence-tab" role="tab" aria-selected="false" data-panel-target="molecules">robust生成分子 <b>${compounds.length}</b></button>
+    </div>
+    <section class="evidence-panel active" data-panel="hotspots">${hotspotPanel(pair)}</section>
+    <section class="evidence-panel" data-panel="seeds" hidden>${seedPanel(pair,seeds)}</section>
+    <section class="evidence-panel" data-panel="molecules" hidden>${compoundPanel(pair,compounds)}</section>
+  `);
+  document.querySelectorAll('[data-panel-target]').forEach(button=>{
+    button.onclick=()=>activateEvidencePanel(button.dataset.panelTarget);
+  });
+}
+
+function activateEvidencePanel(panelName){
+  document.querySelectorAll('[data-panel-target]').forEach(button=>{
+    const active=button.dataset.panelTarget===panelName;
+    button.classList.toggle('active',active);
+    button.setAttribute('aria-selected',String(active));
+  });
+  document.querySelectorAll('[data-panel]').forEach(panel=>{
+    const active=panel.dataset.panel===panelName;
+    panel.classList.toggle('active',active);
+    panel.hidden=!active;
+  });
+}
+
+function showDialog(html){
+  $('#detail-content').innerHTML=html;
+  $('#detail-dialog').showModal();
+}
+
+function route(){
+  const legacyMap={surface:'receptors',seeds:'pairs',compounds:'pairs',structures:'overview',downloads:'overview'};
+  const requested=location.hash.slice(1)||'overview';
+  const id=legacyMap[requested]||requested;
+  const valid=['overview','receptors','pairs'].includes(id)?id:'overview';
+  document.querySelectorAll('.page').forEach(page=>page.classList.toggle('active',page.id===valid));
+  document.querySelectorAll('nav a').forEach(link=>link.classList.toggle('active',link.getAttribute('href')===`#${valid}`));
+  $('#nav').classList.remove('open');
+  $('#menu-button').setAttribute('aria-expanded','false');
+  window.scrollTo(0,0);
+}
+
+window.addEventListener('hashchange',route);
+$('#menu-button').onclick=()=>{
+  const open=$('#nav').classList.toggle('open');
+  $('#menu-button').setAttribute('aria-expanded',String(open));
+};
+$('#dialog-close').onclick=()=>$('#detail-dialog').close();
+$('#detail-dialog').addEventListener('click',event=>{if(event.target===$('#detail-dialog'))$('#detail-dialog').close()});
+$('#receptor-search').addEventListener('input',renderReceptors);
+$('#pair-search').addEventListener('input',renderPairs);
+route();
+load().catch(error=>{
+  document.querySelectorAll('.data-table').forEach(element=>{
+    if(!element.innerHTML)element.innerHTML=`<div class="load-error"><b>数据载入失败</b><span>${esc(error.message)}。请通过网站地址或本地HTTP服务器访问，不要直接双击HTML文件。</span></div>`;
+  });
+  $('#pair-total-check').textContent='数据尚未载入，无法核对904条关联。';
+  console.error(error);
+});

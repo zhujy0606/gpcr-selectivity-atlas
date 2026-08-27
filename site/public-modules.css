@@ -1,0 +1,579 @@
+.compact-hero {
+  min-height: 460px;
+  padding-bottom: 28px;
+}
+
+.compact-hero h1 {
+  font-size: clamp(46px, 5.7vw, 82px);
+}
+
+.atlas-mark {
+  height: 350px;
+  border: 1px solid #c9d6cd;
+  border-radius: 28px;
+  background-color: #e7ece6;
+  background-image:
+    linear-gradient(rgba(14, 89, 72, .08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(14, 89, 72, .08) 1px, transparent 1px);
+  background-size: 32px 32px;
+  box-shadow: none;
+}
+
+.atlas-node {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 126px;
+  height: 126px;
+  border: 1px solid var(--green);
+  border-radius: 50%;
+  background: var(--white);
+  color: var(--green);
+  font: 500 44px/1 Georgia, serif;
+  box-shadow: 10px 10px 0 rgba(14, 89, 72, .09);
+}
+
+.atlas-node small {
+  margin-top: -23px;
+  font: 800 8px/1 Inter, ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: .14em;
+}
+
+.node-surface {
+  left: 11%;
+  top: 96px;
+}
+
+.node-pairs {
+  right: 11%;
+  top: 38px;
+  background: var(--green);
+  color: white;
+}
+
+.node-molecules {
+  right: 17%;
+  bottom: 20px;
+  width: 102px;
+  height: 102px;
+  border-color: #9aa633;
+  background: var(--lime);
+  color: #374109;
+  font-size: 34px;
+}
+
+.atlas-line {
+  position: absolute;
+  left: 35%;
+  top: 51%;
+  width: 39%;
+  height: 2px;
+  background: var(--green);
+  transform: rotate(-9deg);
+  transform-origin: left center;
+}
+
+.atlas-line::after {
+  content: "";
+  position: absolute;
+  right: -1px;
+  top: -5px;
+  width: 9px;
+  height: 9px;
+  border-top: 2px solid var(--green);
+  border-right: 2px solid var(--green);
+  transform: rotate(45deg);
+}
+
+.module-gateway {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin: 22px 0 32px;
+}
+
+.module-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 62px 1fr;
+  min-height: 330px;
+  padding: 31px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--white);
+  color: var(--ink);
+  text-decoration: none;
+  transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+}
+
+.module-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 6px;
+  background: var(--green);
+}
+
+.pair-module::before {
+  background: var(--lime);
+}
+
+.module-card:hover {
+  z-index: 1;
+  border-color: var(--green);
+  box-shadow: 12px 12px 0 rgba(14, 89, 72, .09);
+  transform: translate(-3px, -3px);
+}
+
+.module-index {
+  color: var(--green);
+  font: 500 31px/1 Georgia, serif;
+}
+
+.module-card h2 {
+  margin: 9px 0 14px;
+  font: 500 clamp(27px, 2.6vw, 39px)/1.07 Georgia, serif;
+  letter-spacing: -.03em;
+}
+
+.module-card p:not(.eyebrow) {
+  max-width: 570px;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.module-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 24px;
+}
+
+.module-metrics b {
+  padding: 5px 9px;
+  border: 1px solid #cbd3cc;
+  background: #f1f4ef;
+  color: var(--green);
+  font-size: 10px;
+}
+
+.module-action {
+  position: absolute;
+  right: 30px;
+  bottom: 25px;
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.module-action i {
+  display: inline-block;
+  margin-left: 5px;
+  font-style: normal;
+  transition: transform .2s ease;
+}
+
+.module-card:hover .module-action i {
+  transform: translateX(5px);
+}
+
+.module-page-head {
+  display: flex;
+  max-width: none;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 30px;
+}
+
+.module-page-head > div:first-child {
+  max-width: 900px;
+}
+
+.table-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 9px 14px;
+  border: 1px solid var(--green);
+  background: transparent;
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.table-download:hover {
+  background: var(--green);
+  color: white;
+}
+
+.head-downloads {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
+.table-intro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 12px 15px;
+  border: 1px solid var(--line);
+  border-bottom: 0;
+  background: #e9e7de;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.table-intro b {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.table-intro + .data-table {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.row-action {
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.molecule-count {
+  display: inline-grid;
+  min-width: 31px;
+  height: 31px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--lime);
+  color: #374109;
+}
+
+.pair-total-note {
+  margin-top: 14px;
+}
+
+#detail-dialog {
+  width: min(1380px, calc(100vw - 28px));
+  max-height: 92vh;
+  border-radius: 10px;
+}
+
+#detail-content {
+  padding: 34px 36px 38px;
+}
+
+.pair-detail-head,
+.receptor-detail-head {
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+}
+
+.pair-summary-strip {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  margin-bottom: 20px;
+  border: 1px solid var(--line);
+  background: #f1f2ec;
+}
+
+.pair-summary-strip > span {
+  display: grid;
+  gap: 5px;
+  min-height: 76px;
+  align-content: center;
+  padding: 12px 15px;
+  border-right: 1px solid var(--line);
+}
+
+.pair-summary-strip > span:last-child {
+  border-right: 0;
+}
+
+.pair-summary-strip small {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.pair-summary-strip b {
+  color: var(--green);
+  font: 500 22px/1 Georgia, serif;
+}
+
+.receptor-summary-strip {
+  grid-template-columns: repeat(5, 1fr);
+}
+
+.evidence-tabs {
+  display: flex;
+  gap: 7px;
+  margin: 0 0 16px;
+  padding: 7px;
+  border: 1px solid var(--line);
+  background: #e9e7de;
+}
+
+.evidence-tab {
+  flex: 1;
+  min-height: 45px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #55615b;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.evidence-tab b {
+  display: inline-grid;
+  min-width: 24px;
+  height: 24px;
+  margin-left: 5px;
+  place-items: center;
+  border-radius: 50%;
+  background: #d7d9d2;
+  font-size: 10px;
+}
+
+.evidence-tab:hover,
+.evidence-tab.active {
+  border-color: var(--green);
+  background: var(--white);
+  color: var(--green);
+}
+
+.evidence-tab.active b {
+  background: var(--lime);
+  color: #374109;
+}
+
+.evidence-panel[hidden] {
+  display: none;
+}
+
+.table-explainer,
+.evidence-section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 2px 2px 11px;
+}
+
+.table-explainer b,
+.evidence-section-head h3 {
+  margin: 0;
+  font: 500 22px/1.1 Georgia, serif;
+}
+
+.table-explainer span,
+.evidence-section-head > span {
+  max-width: 710px;
+  color: var(--muted);
+  font-size: 11px;
+  text-align: right;
+}
+
+.evidence-section-head .eyebrow {
+  margin-bottom: 4px;
+}
+
+.evidence-table {
+  max-height: 56vh;
+  background: white;
+}
+
+.evidence-table th {
+  top: 0;
+  background: #e2e9e3;
+}
+
+.wide-table table {
+  min-width: 1250px;
+}
+
+.molecule-table table {
+  min-width: 1770px;
+}
+
+.molecule-smiles {
+  max-width: 230px;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 9px;
+}
+
+.compact-seed {
+  padding: 5px 7px;
+}
+
+.structure-link {
+  display: inline-block;
+  padding: 6px 8px;
+  border: 1px solid #174b68;
+  background: #eef7fb;
+  color: #174b68;
+  font-size: 9px;
+  font-weight: 900;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.structure-link:hover {
+  background: #174b68;
+  color: white;
+}
+
+.empty-cell {
+  padding: 34px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.detail-note {
+  margin-top: 14px;
+}
+
+.load-error {
+  display: grid;
+  gap: 7px;
+  padding: 26px;
+  color: #7a4c09;
+  background: #f5dfbb;
+}
+
+footer a {
+  color: var(--green);
+}
+
+@media (max-width: 1050px) {
+  .module-gateway {
+    grid-template-columns: 1fr;
+  }
+
+  .module-page-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .head-downloads {
+    justify-content: flex-start;
+  }
+
+  .pair-summary-strip,
+  .receptor-summary-strip {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .pair-summary-strip > span:nth-child(3) {
+    border-right: 0;
+  }
+
+  .pair-summary-strip > span:nth-child(n+4) {
+    border-top: 1px solid var(--line);
+  }
+}
+
+@media (max-width: 650px) {
+  .compact-hero {
+    min-height: 470px;
+  }
+
+  .module-card {
+    grid-template-columns: 45px 1fr;
+    min-height: 390px;
+    padding: 25px 20px;
+  }
+
+  .module-index {
+    font-size: 24px;
+  }
+
+  .module-action {
+    right: 20px;
+  }
+
+  .module-page-head {
+    margin-bottom: 28px;
+  }
+
+  .head-downloads {
+    display: grid;
+    width: 100%;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .table-intro,
+  .table-explainer,
+  .evidence-section-head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .table-explainer span,
+  .evidence-section-head > span {
+    text-align: left;
+  }
+
+  #detail-content {
+    padding: 24px 18px 30px;
+  }
+
+  .pair-summary-strip,
+  .receptor-summary-strip {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .pair-summary-strip > span,
+  .pair-summary-strip > span:nth-child(3) {
+    border-right: 1px solid var(--line);
+    border-top: 1px solid var(--line);
+  }
+
+  .pair-summary-strip > span:nth-child(odd) {
+    border-right: 1px solid var(--line);
+  }
+
+  .pair-summary-strip > span:nth-child(even) {
+    border-right: 0;
+  }
+
+  .pair-summary-strip > span:first-child,
+  .pair-summary-strip > span:nth-child(2) {
+    border-top: 0;
+  }
+
+  .evidence-tabs {
+    overflow-x: auto;
+  }
+
+  .evidence-tab {
+    flex: 0 0 auto;
+    padding: 8px 12px;
+  }
+
+  footer {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .module-card,
+  .module-action i {
+    transition: none;
+  }
+}
