@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="GPCR表面差异、受体对热点、种子与PocketXMol化合物的公开计算证据数据库">
+  <title>GPCR Selectivity Atlas</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#overview" aria-label="GPCR Selectivity Atlas 首页">
+      <span class="brand-mark">G</span>
+      <span><strong>GPCR Selectivity Atlas</strong><small>surface → hotspot → molecule</small></span>
+    </a>
+    <button id="menu-button" class="menu-button" aria-label="打开导航" aria-expanded="false">目录</button>
+    <nav id="nav" aria-label="主导航">
+      <a href="#overview">总览</a>
+      <a href="#receptors">受体</a>
+      <a href="#surface">全局表面</a>
+      <a href="#pairs">163对与热点</a>
+      <a href="#seeds">种子</a>
+      <a href="#compounds">904化合物</a>
+      <a href="#structures">活性结构</a>
+      <a href="#downloads">下载</a>
+    </nav>
+  </header>
+
+  <main>
+    <section id="overview" class="page active">
+      <div class="hero">
+        <div>
+          <p class="eyebrow">OPEN COMPUTATIONAL EVIDENCE RESOURCE · MVP 0.1</p>
+          <h1>从GPCR表面差异到<br><em>选择性分子设计</em></h1>
+          <p class="lede">一个可追溯的公开数据入口，连接dMaSIF表面、163组受体对、489个局部热点、亲本种子、PocketXMol生成分子及其对接、ADMET与MM/GBSA证据。</p>
+          <div class="hero-actions">
+            <a class="button primary" href="#pairs">浏览163组受体对</a>
+            <a class="button ghost" href="#downloads">下载全部表格</a>
+          </div>
+        </div>
+        <div class="hero-graphic" aria-hidden="true">
+          <div class="orb orb-a"></div><div class="orb orb-b"></div><div class="orb orb-c"></div>
+          <span class="axis-label label-a">SURFACE</span><span class="axis-label label-b">HOTSPOT</span><span class="axis-label label-c">MOLECULE</span>
+        </div>
+      </div>
+      <div id="summary-cards" class="summary-grid loading-block">正在载入冻结数据…</div>
+      <div class="section-heading"><span>证据链</span><h2>同一条记录，贯穿结构与分子</h2></div>
+      <div class="pipeline" aria-label="项目筛选流程">
+        <article><b>01</b><h3>dMaSIF表面</h3><p>287个受体资产清单与286×286全局距离。</p></article>
+        <i>→</i><article><b>02</b><h3>163组受体对</h3><p>每组冻结Top 3 BW差异热点。</p></article>
+        <i>→</i><article><b>03</b><h3>亲本种子</h3><p>fast-mode与三次detail-mode对接证据。</p></article>
+        <i>→</i><article><b>04</b><h3>904生成分子</h3><p>性质、ADMET、姿势、MM/GBSA与最终状态。</p></article>
+      </div>
+      <aside class="notice"><strong>解释边界</strong><span>本网站汇总计算预测，用于研究优先级排序；不等同实验活性、选择性、安全性或临床有效性。</span></aside>
+    </section>
+
+    <section id="receptors" class="page">
+      <div class="page-head"><p class="eyebrow">RECEPTOR SURFACE CATALOG</p><h1>dMaSIF受体资产</h1><p>浏览受体表面坐标、embedding与VTK清单，以及全局表面最近邻和163对参与情况。</p></div>
+      <div class="toolbar"><label>搜索受体<input id="receptor-search" type="search" placeholder="UniProt或受体名称"></label><span id="receptor-count"></span></div>
+      <div id="receptor-table" class="data-table"></div>
+    </section>
+
+    <section id="surface" class="page">
+      <div class="page-head"><p class="eyebrow">GLOBAL SURFACE LANDSCAPE</p><h1>全局dMaSIF差异</h1><p>基于286个Class A受体的表面指纹距离矩阵。距离较小表示模型表征中的表面更相近。</p></div>
+      <div id="surface-stats" class="summary-grid"></div>
+      <div class="viz-grid">
+        <article class="panel"><div class="panel-title"><h2>冻结MDS投影</h2><span>275/286覆盖</span></div><svg id="mds-plot" viewBox="0 0 760 420" role="img" aria-label="dMaSIF表面MDS散点图"></svg></article>
+        <article class="panel"><div class="panel-title"><h2>全局距离分布</h2><span>40,755个无序组合</span></div><div id="distance-histogram" class="histogram"></div></article>
+      </div>
+      <aside class="notice amber"><strong>不要混用</strong><span>dMaSIF指纹距离不是序列相似度、活性态结构RMSD或实验药理相似度。</span></aside>
+    </section>
+
+    <section id="pairs" class="page">
+      <div class="page-head"><p class="eyebrow">SELECTED RECEPTOR PAIRS</p><h1>163组受体对与Top 3热点</h1><p>每组显示全局表面距离、三个最大局部指纹差异BW位点、双向任务终态及相关生成分子。</p></div>
+      <div class="toolbar"><label>搜索受体对<input id="pair-search" type="search" placeholder="UniProt、受体名称或BW位点"></label><span id="pair-count"></span></div>
+      <div id="pair-table" class="data-table"></div>
+    </section>
+
+    <section id="seeds" class="page">
+      <div class="page-head"><p class="eyebrow">PARENT SEEDS</p><h1>PocketXMol亲本种子</h1><p>138个唯一ZINC种子在178个有向任务中的冻结记录；同一化学种子跨任务时独立保留。</p></div>
+      <div class="toolbar"><label>搜索种子<input id="seed-search" type="search" placeholder="ZINC、任务、受体或BW位点"></label><span id="seed-count"></span></div>
+      <div id="seed-table" class="data-table"></div>
+    </section>
+
+    <section id="compounds" class="page">
+      <div class="page-head"><p class="eyebrow">POCKETXMOL GENERATIONS</p><h1>904个稳健改善化合物</h1><p>保留全部采样稳健且对接DD优于亲本种子的分子，并叠加438、323、141和111阶段标签。</p></div>
+      <div class="compound-controls">
+        <label>搜索<input id="compound-search" type="search" placeholder="A6PX、ZINC、受体、任务或SMILES"></label>
+        <label>证据阶段<select id="compound-stage"><option value="all">全部904</option><option value="shortlist">跨域短名单438</option><option value="baseline">完整MM/GBSA基线323</option><option value="dual">双端改善141</option><option value="final">最终111</option></select></label>
+        <label>MW上限<input id="mw-max" type="number" value="700" min="0" step="10"></label>
+        <label>cLogP上限<input id="logp-max" type="number" value="8" min="-5" step="0.5"></label>
+      </div>
+      <div class="toolbar compact"><span id="compound-count"></span><small>点击任一化合物查看三次对接、ADMET及证据详情</small></div>
+      <div id="compound-table" class="data-table"></div>
+    </section>
+
+    <section id="structures" class="page">
+      <div class="page-head"><p class="eyebrow">ACTIVE-STATE STRUCTURES</p><h1>活性/变构结构相似度</h1><p>该数据层与dMaSIF表面距离分开管理，避免结构概念混淆。</p></div>
+      <div class="gap-card"><span>DATA GAP</span><h2>系统性两两活性态结构相似度尚未计算</h2><p>当前冻结证据只有36条GPCRdb结构参考。后续计划统一筛选活性态PDB并计算TM-score、Cα RMSD、口袋RMSD和共享BW位点；首版不生成伪相似度。</p></div>
+      <div class="toolbar"><label>搜索结构<input id="structure-search" type="search" placeholder="PDB、蛋白、配体或功能"></label><span id="structure-count"></span></div>
+      <div id="structure-table" class="data-table"></div>
+    </section>
+
+    <section id="downloads" class="page">
+      <div class="page-head"><p class="eyebrow">DOWNLOAD & REUSE</p><h1>下载、引用与限制</h1><p>小型规范表可直接下载；大型dMaSIF二进制资产将在确认许可证后放入外部公开档案。</p></div>
+      <div class="download-grid">
+        <a href="downloads/receptors.csv" download><b>CSV</b><h3>受体资产清单</h3><p>287个受体、最近邻、资产计数与公开状态。</p></a>
+        <a href="downloads/classA286_distance_matrix.csv" download><b>CSV</b><h3>全局距离矩阵</h3><p>286×286 dMaSIF表面指纹距离。</p></a>
+        <a href="downloads/receptor_pairs_top3.csv" download><b>CSV</b><h3>163组Top 3热点</h3><p>489个BW局部差异位点及终态。</p></a>
+        <a href="downloads/seeds.csv" download><b>CSV</b><h3>亲本种子</h3><p>178条有向任务×种子对接证据。</p></a>
+        <a href="downloads/compounds_904.csv" download><b>CSV</b><h3>904个生成分子</h3><p>性质、对接、ADMET与筛选标签。</p></a>
+        <a href="downloads/active_structure_references.csv" download><b>CSV</b><h3>结构参考</h3><p>36条GPCRdb活性/变构结构参考。</p></a>
+      </div>
+      <div class="methods-grid">
+        <article class="panel"><h2>版本与溯源</h2><div id="provenance"></div></article>
+        <article class="panel"><h2>引用与许可证</h2><p>正式公开前需确认项目数据许可证及UniProt、PDB、GPCRdb、ZINC、PocketXMol、ADMET-AI衍生数据条款。当前MVP不自动公开原始二进制资产。</p><p><strong>证据范围：</strong>computational prioritization only。</p></article>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="detail-dialog"><button id="dialog-close" aria-label="关闭详情">×</button><div id="detail-content"></div></dialog>
+  <footer><span>GPCR Selectivity Atlas</span><span id="footer-version">loading…</span></footer>
+  <script src="app.js"></script>
+</body>
+</html>

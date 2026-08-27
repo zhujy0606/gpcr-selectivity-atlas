@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "GPCR Selectivity Atlas public record contract",
+  "type": "object",
+  "description": "Stable public entities. Null means the metric was not available or was not computed; it never implies a zero value.",
+  "$defs": {
+    "uniprot": {"type": "string", "pattern": "^[A-Z0-9]+$"},
+    "pair_id": {"type": "string", "pattern": "^[A-Z0-9]+__[A-Z0-9]+$"},
+    "hotspot": {
+      "type": "object",
+      "required": ["hotspot_id", "rank", "bw", "residues", "fingerprint_difference"],
+      "properties": {
+        "hotspot_id": {"type": "string"},
+        "rank": {"type": "integer", "minimum": 1, "maximum": 3},
+        "bw": {"type": "string"},
+        "residues": {"type": "string"},
+        "fingerprint_difference": {"type": ["number", "null"]}
+      }
+    },
+    "compound": {
+      "type": "object",
+      "required": ["compound_id", "canonical_smiles", "pair_id", "target_uniprot", "offtarget_uniprot", "seed_record_id", "properties", "docking", "admet", "evidence"],
+      "properties": {
+        "compound_id": {"type": "string", "pattern": "^A6PX-"},
+        "canonical_smiles": {"type": "string"},
+        "pair_id": {"$ref": "#/$defs/pair_id"},
+        "target_uniprot": {"$ref": "#/$defs/uniprot"},
+        "offtarget_uniprot": {"$ref": "#/$defs/uniprot"},
+        "seed_record_id": {"type": "string"},
+        "properties": {"type": "object"},
+        "docking": {"type": "object"},
+        "admet": {"type": "object"},
+        "evidence": {"type": "object"}
+      }
+    }
+  }
+}
