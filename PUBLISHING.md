@@ -12,13 +12,17 @@
 
 `public_database/`作为独立公开仓库根目录。工作流`.github/workflows/deploy-pages.yml`会在`main`分支更新时发布`site/`。
 
+- 公开仓库：https://github.com/zhujy0606/gpcr-selectivity-atlas
+- 公开网站：https://zhujy0606.github.io/gpcr-selectivity-atlas/
+
 发布步骤：
 
-1. 创建公开GitHub仓库`zhujy0606/gpcr-selectivity-atlas`；
-2. 将`public_database/`内容作为仓库根目录推送到`main`；
-3. 在仓库Settings → Pages中把Source设为GitHub Actions；
-4. 等待Deploy GPCR Selectivity Atlas工作流完成；
-5. 将生成的网址写回README和Zenodo元数据。
+1. [x] 创建公开GitHub仓库`zhujy0606/gpcr-selectivity-atlas`；
+2. [x] 将`public_database/`内容作为仓库根目录推送到`main`；
+3. [x] 将Pages Source设为GitHub Actions；
+4. [x] 完成Deploy GPCR Selectivity Atlas工作流；
+5. [x] 将生成的网址写回README；
+6. [ ] Zenodo发布后回填DOI和大型资产链接。
 
 ## Zenodo发布
 
