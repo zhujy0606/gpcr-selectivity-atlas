@@ -3,9 +3,9 @@
 这是一个由项目冻结证据自动生成的静态公开数据库。公众页面收敛为两个表格化模块：
 
 1. **287受体 dMaSIF 数据**：逐受体汇总表面坐标、embedding、VTK资产、完整性、最近表面邻居和全局距离，并可展开文件级清单。
-2. **163对受体与选择性分子**：逐受体对汇总dMaSIF/MaSIF距离；点击任一受体对，可在三张关联表中查看Top 3差异热点、Pocketxmol输入种子和该受体对对应的Pocketxmol生成分子。
+2. **163对受体与选择性分子**：逐受体对汇总dMaSIF/MaSIF距离；点击任一受体对，可查看Top 3差异热点、Pocketxmol输入种子和该受体对对应的Pocketxmol生成分子。对于904集合中没有Pocketxmol生成分子的48对受体，另行展示冻结detail-mode筛选得到的1–2个ZINC分子，并明确标注其不是Pocketxmol生成物。
 
-第二模块完整纳入904个Pocketxmol生成分子及其输入种子ZINC号、对接与理化性质。每个分子均提供配体SDF结构包；有复合物结构证据的分子还提供目标/脱靶计算复合物PDB。
+第二模块完整纳入904个Pocketxmol生成分子及其输入种子ZINC号、对接与理化性质；同时以独立来源表补充87个detail-mode筛选分子，覆盖全部48个零生成受体对。每个Pocketxmol生成分子均提供配体SDF结构包；有复合物结构证据的分子还提供目标/脱靶计算复合物PDB。
 
 - 公开网站：https://zhujy0606.github.io/gpcr-selectivity-atlas/
 - GitHub仓库：https://github.com/zhujy0606/gpcr-selectivity-atlas

@@ -182,11 +182,14 @@ def build() -> dict[str, Any]:
             if len(fields) == 2:
                 name_by_accession.setdefault(fields[0], fields[1])
 
-    pair_status_by_id = {row["original_pair_id"]: row for row in rows(SOURCES["pair_status"])}
+    pair_status_by_id = {
+        unordered_pair(*directed_pair(row["original_pair_id"])): row
+        for row in rows(SOURCES["pair_status"])
+    }
     direction_status = rows(SOURCES["direction_status"])
     directions_by_pair: dict[str, list[dict[str, str]]] = defaultdict(list)
     for row in direction_status:
-        directions_by_pair[row["original_pair_id"]].append(row)
+        directions_by_pair[unordered_pair(*directed_pair(row["original_pair_id"]))].append(row)
 
     compounds: list[dict[str, Any]] = []
     compound_counts_by_pair: Counter[str] = Counter()
@@ -310,6 +313,65 @@ def build() -> dict[str, Any]:
         )
         seed_counts_by_pair[pair_id] += 1
 
+    public_pair_ids = {
+        unordered_pair(row["uniprot_a"], row["uniprot_b"])
+        for row in top_rows
+    }
+    zero_generation_pair_ids = {
+        pair_id for pair_id in public_pair_ids
+        if compound_counts_by_pair[pair_id] == 0
+    }
+    detail_mode_compounds: list[dict[str, Any]] = []
+    detail_mode_counts_by_pair: Counter[str] = Counter()
+    detail_mode_zinc_ids_by_pair: dict[str, set[str]] = defaultdict(set)
+    for source in roster:
+        target = source["target_uniprot"]
+        offtarget = source["offtarget_uniprot"]
+        pair_id = unordered_pair(target, offtarget)
+        if pair_id not in zero_generation_pair_ids:
+            continue
+        record = {
+            "detail_record_id": source["bidirectional_seed_id"],
+            "pair_id": pair_id,
+            "zinc_id": source["zinc_id"],
+            "direction": source["direction"],
+            "target_uniprot": target,
+            "offtarget_uniprot": offtarget,
+            "target_name": name_by_accession.get(target),
+            "offtarget_name": name_by_accession.get(offtarget),
+            "source_stage": source["source_stage"],
+            "hotspot_bw": source["bw_label"],
+            "fast": {
+                "rank": number(source["rank"]),
+                "target": number(source["fast_target"]),
+                "offtarget": number(source["fast_offtarget"]),
+                "dd": number(source["fast_dd"]),
+            },
+            "detail": {
+                "target_median": number(source["detail_target_median"]),
+                "offtarget_median": number(source["detail_offtarget_median"]),
+                "dd_median": number(source["detail_dd"]),
+                "dd_best": number(source["detail_dd_seed_min"]),
+                "dd_worst": number(source["detail_dd_seed_max"]),
+                "dd_sd": number(source["detail_dd_seed_sd"]),
+                "target_pose_stable": boolean(source["target_pose_stable"]),
+                "offtarget_pose_stable": boolean(source["offtarget_pose_stable"]),
+            },
+            "high_confidence": boolean(source["high_confidence"]),
+            "selection_scope": "detail_mode_selected_seed",
+            "pocketxmol_generated": False,
+        }
+        detail_mode_compounds.append(record)
+        detail_mode_counts_by_pair[pair_id] += 1
+        detail_mode_zinc_ids_by_pair[pair_id].add(source["zinc_id"])
+    detail_mode_compounds.sort(
+        key=lambda record: (
+            record["pair_id"],
+            0 if record["direction"] == "forward" else 1,
+            record["detail_record_id"],
+        )
+    )
+
     pairs: list[dict[str, Any]] = []
     for row in top_rows:
         pair_id = unordered_pair(row["uniprot_a"], row["uniprot_b"])
@@ -345,6 +407,8 @@ def build() -> dict[str, Any]:
                 "final_candidate_count": compound_counts_by_pair[pair_id],
                 "pocketxmol_seed_record_count": seed_counts_by_pair[pair_id],
                 "pocketxmol_compound_count": compound_counts_by_pair[pair_id],
+                "detail_mode_selected_compound_count": detail_mode_counts_by_pair[pair_id],
+                "detail_mode_selected_zinc_ids": sorted(detail_mode_zinc_ids_by_pair[pair_id]),
                 "input_seed_zinc_ids": sorted({
                     seed["seed_zinc_id"] for seed in seeds
                     if seed["pair_id"] == pair_id and seed["seed_zinc_id"]
@@ -472,6 +536,9 @@ def build() -> dict[str, Any]:
             "seed_task_records": len(seeds),
             "generated_compounds": len(compounds),
             "final_candidates": len(compounds),
+            "zero_generation_receptor_pairs": len(zero_generation_pair_ids),
+            "detail_mode_selected_compounds_for_zero_generation_pairs": len(detail_mode_compounds),
+            "zero_generation_pairs_with_detail_mode_compounds": len(detail_mode_counts_by_pair),
             "admet_complete": sum(all(value is not None for value in compound["admet"].values()) for compound in compounds),
             "structure_bundles": structure_manifest["counts"]["compounds"],
             "ligand_sdf_files": structure_manifest["counts"]["ligand_sdf_files"],
@@ -513,6 +580,7 @@ def build() -> dict[str, Any]:
     dump_json("pairs.json", pairs)
     dump_json("seeds.json", seeds)
     dump_json("compounds.json", compounds)
+    dump_json("detail_mode_compounds.json", detail_mode_compounds)
     dump_json("global_surface.json", global_surface)
     dump_json("active_structures.json", active_payload)
     dump_json("provenance.json", provenance)
@@ -537,6 +605,8 @@ def build() -> dict[str, Any]:
             "surface_distance": pair["surface_distance"], "pair_terminal_status": pair["pair_terminal_status"],
             "seed_task_records": pair["pocketxmol_seed_record_count"], "input_seed_zinc_ids": "|".join(pair["input_seed_zinc_ids"]),
             "generated_compounds": pair["pocketxmol_compound_count"], "final_candidate_count": pair["final_candidate_count"],
+            "detail_mode_selected_compounds": pair["detail_mode_selected_compound_count"],
+            "detail_mode_selected_zinc_ids": "|".join(pair["detail_mode_selected_zinc_ids"]),
         }
         for i, hotspot in enumerate(pair["hotspots"], 1):
             out[f"hotspot{i}_bw"] = hotspot["bw"]
@@ -575,6 +645,34 @@ def build() -> dict[str, Any]:
         }
         compound_flat.append(out)
     write_csv("compounds_904.csv", compound_flat, list(compound_flat[0]))
+    detail_mode_flat = [
+        {
+            "detail_record_id": record["detail_record_id"],
+            "pair_id": record["pair_id"],
+            "zinc_id": record["zinc_id"],
+            "direction": record["direction"],
+            "target_uniprot": record["target_uniprot"],
+            "offtarget_uniprot": record["offtarget_uniprot"],
+            "source_stage": record["source_stage"],
+            "hotspot_bw": record["hotspot_bw"],
+            "fast_rank": record["fast"]["rank"],
+            "fast_target": record["fast"]["target"],
+            "fast_offtarget": record["fast"]["offtarget"],
+            "fast_dd": record["fast"]["dd"],
+            "detail_target_median": record["detail"]["target_median"],
+            "detail_offtarget_median": record["detail"]["offtarget_median"],
+            "detail_dd_median": record["detail"]["dd_median"],
+            "detail_dd_best": record["detail"]["dd_best"],
+            "detail_dd_worst": record["detail"]["dd_worst"],
+            "detail_dd_sd": record["detail"]["dd_sd"],
+            "target_pose_stable": record["detail"]["target_pose_stable"],
+            "offtarget_pose_stable": record["detail"]["offtarget_pose_stable"],
+            "high_confidence": record["high_confidence"],
+            "pocketxmol_generated": record["pocketxmol_generated"],
+        }
+        for record in detail_mode_compounds
+    ]
+    write_csv("detail_mode_compounds.csv", detail_mode_flat, list(detail_mode_flat[0]))
     write_csv("active_structure_references.csv", active_structures, ["pdb_id", "protein", "ligand", "function", "bw_site_count", "bw_sites"])
     shutil.copyfile(matrix_path, DOWNLOADS / "classA286_distance_matrix.csv")
     return summary

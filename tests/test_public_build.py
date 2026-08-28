@@ -21,6 +21,7 @@ class PublicBuildTest(unittest.TestCase):
         cls.compounds = json.loads((SITE / "data/compounds.json").read_text())
         cls.pairs = json.loads((SITE / "data/pairs.json").read_text())
         cls.receptors = json.loads((SITE / "data/receptors.json").read_text())
+        cls.detail_mode_compounds = json.loads((SITE / "data/detail_mode_compounds.json").read_text())
 
     def test_frozen_counts(self):
         counts = self.summary["counts"]
@@ -34,6 +35,9 @@ class PublicBuildTest(unittest.TestCase):
             "seed_task_records": 178,
             "generated_compounds": 904,
             "final_candidates": 904,
+            "zero_generation_receptor_pairs": 48,
+            "detail_mode_selected_compounds_for_zero_generation_pairs": 87,
+            "zero_generation_pairs_with_detail_mode_compounds": 48,
             "admet_complete": 904,
             "structure_bundles": 904,
             "ligand_sdf_files": 904,
@@ -74,6 +78,19 @@ class PublicBuildTest(unittest.TestCase):
             for pair in self.pairs
         ))
 
+        zero_generation_pairs = {
+            pair["pair_id"] for pair in self.pairs
+            if pair["pocketxmol_compound_count"] == 0
+        }
+        detail_pairs = {record["pair_id"] for record in self.detail_mode_compounds}
+        self.assertEqual(len(zero_generation_pairs), 48)
+        self.assertEqual(len(self.detail_mode_compounds), 87)
+        self.assertEqual(detail_pairs, zero_generation_pairs)
+        self.assertTrue(all(record["zinc_id"].startswith("ZINC") for record in self.detail_mode_compounds))
+        self.assertTrue(all(record["pocketxmol_generated"] is False for record in self.detail_mode_compounds))
+        self.assertTrue(all(1 <= pair["detail_mode_selected_compound_count"] <= 2 for pair in self.pairs if pair["pair_id"] in zero_generation_pairs))
+        self.assertTrue(all(pair["detail_mode_selected_compound_count"] == 0 for pair in self.pairs if pair["pair_id"] not in zero_generation_pairs))
+
     def test_public_interface_is_two_module_table_catalog(self):
         html = (SITE / "index.html").read_text()
         javascript = (SITE / "app.js").read_text()
@@ -84,6 +101,8 @@ class PublicBuildTest(unittest.TestCase):
         self.assertIn("Top 3 hotspots", javascript)
         self.assertIn("Input seeds", javascript)
         self.assertIn("Pocketxmol-generated compounds", html + javascript)
+        self.assertIn("Detail-mode selected compounds", html + javascript)
+        self.assertIn("detail_mode_compounds", javascript)
         self.assertIsNone(re.search(r"[\u4e00-\u9fff]", html + javascript))
         self.assertNotIn("PocketXMol", html + javascript)
         self.assertNotIn("robust", html.lower() + javascript.lower())
