@@ -3,11 +3,11 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="287个GPCR受体的dMaSIF数据，以及163对受体对从表面差异热点到PocketXMol选择性分子的公开计算证据数据库">
+  <meta name="description" content="287个GPCR受体的dMaSIF数据，以及163对受体对从表面差异热点到Pocketxmol选择性分子的公开计算证据数据库">
   <title>GPCR Selectivity Atlas</title>
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="seed-lineage.css">
-  <link rel="stylesheet" href="public-modules.css">
+  <link rel="stylesheet" href="styles.css?v=20260828">
+  <link rel="stylesheet" href="seed-lineage.css?v=20260828">
+  <link rel="stylesheet" href="public-modules.css?v=20260828">
 </head>
 <body>
   <header class="topbar">
@@ -29,7 +29,7 @@
         <div>
           <p class="eyebrow">OPEN COMPUTATIONAL EVIDENCE RESOURCE · VERSION 0.1</p>
           <h1>两张系统表，连接<br><em>受体表面与选择性分子</em></h1>
-          <p class="lede">公众入口只保留两个数据模块。先浏览287个受体的dMaSIF资产；再从163对受体对进入MaSIF距离、Top 3差异热点、PocketXMol输入种子和904个robust选择性生成分子。</p>
+          <p class="lede">公众入口只保留两个数据模块。先浏览287个受体的dMaSIF资产；再从163对受体对进入MaSIF距离、Top 3差异热点、Pocketxmol输入种子和904个Pocketxmol生成分子。</p>
         </div>
         <div class="hero-graphic atlas-mark" aria-hidden="true">
           <span class="atlas-node node-surface">287<small>RECEPTORS</small></span>
@@ -56,14 +56,14 @@
           <div>
             <p class="eyebrow">PAIR-TO-MOLECULE EVIDENCE</p>
             <h2>163对受体与选择性分子</h2>
-            <p>每对受体均可展开三张关联表：Top 3差异热点、PocketXMol输入种子，以及该受体对对应的robust生成分子。</p>
-            <div class="module-metrics"><b>163 受体对</b><b>489 热点</b><b>904 robust分子</b></div>
+            <p>每对受体均可展开三张关联表：Top 3差异热点、Pocketxmol输入种子，以及该受体对对应的Pocketxmol生成分子。</p>
+            <div class="module-metrics"><b>163 受体对</b><b>489 热点</b><b>904 Pocketxmol分子</b></div>
           </div>
           <span class="module-action">打开受体对表 <i>→</i></span>
         </a>
       </div>
 
-      <aside class="notice"><strong>解释边界</strong><span>本网站汇总计算预测，用于研究优先级排序；dMaSIF/MaSIF距离不是结构RMSD，robust选择性分子也不等同实验活性、选择性、安全性或临床有效性。</span></aside>
+      <aside class="notice"><strong>解释边界</strong><span>本网站汇总计算预测，用于研究优先级排序；dMaSIF/MaSIF距离不是结构RMSD，Pocketxmol生成分子也不等同实验活性、选择性、安全性或临床有效性。</span></aside>
     </section>
 
     <section id="receptors" class="page">
@@ -78,11 +78,11 @@
 
     <section id="pairs" class="page">
       <div class="page-head module-page-head">
-        <div><p class="eyebrow">MODULE 02 · PAIR-TO-MOLECULE EVIDENCE</p><h1>163对受体与选择性分子</h1><p>主表给出全局dMaSIF/MaSIF表面距离、Top 3热点、输入种子数和robust分子数。点击任一行，进入三张完整关联表。</p></div>
+        <div><p class="eyebrow">MODULE 02 · PAIR-TO-MOLECULE EVIDENCE</p><h1>163对受体与选择性分子</h1><p>主表给出全局dMaSIF/MaSIF表面距离、Top 3热点、输入种子数和Pocketxmol生成分子数。点击任一行，进入三张完整关联表。</p></div>
         <div class="head-downloads"><a class="table-download" href="downloads/receptor_pairs_top3.csv" download>下载受体对 CSV</a><a class="table-download" href="downloads/compounds_904.csv" download>下载904分子 CSV</a></div>
       </div>
       <div class="toolbar"><label>搜索受体对<input id="pair-search" type="search" placeholder="UniProt、受体名称、ZINC号或BW位点"></label><span id="pair-count"></span></div>
-      <div class="table-intro"><b>逐受体对总表</b><span>点击任一受体对 → Top 3热点表 / 输入种子表 / robust生成分子表</span></div>
+      <div class="table-intro"><b>逐受体对总表</b><span>点击任一受体对 → Top 3热点表 / 输入种子表 / Pocketxmol生成分子表</span></div>
       <div id="pair-table" class="data-table"></div>
       <aside class="notice amber pair-total-note"><strong>904完整性</strong><span id="pair-total-check">正在核对分子与受体对的关联…</span></aside>
     </section>
@@ -93,6 +93,6 @@
     <span>GPCR Selectivity Atlas · 朱景一 · 山东大学 · <a href="https://orcid.org/0009-0003-8404-0455" target="_blank" rel="noreferrer">ORCID</a></span>
     <span id="footer-version">loading…</span>
   </footer>
-  <script src="app.js"></script>
+  <script src="app.js?v=20260828"></script>
 </body>
 </html>

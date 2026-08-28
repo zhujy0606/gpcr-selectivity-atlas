@@ -4,7 +4,7 @@
 
 - `uniprot`：受体的UniProt accession。
 - `pair_id`：两个UniProt排序后以`__`连接，表示无向受体对。
-- `task`：目标/脱靶方向明确的PocketXMol任务。
+- `task`：目标/脱靶方向明确的Pocketxmol任务。
 - `seed_record_id`：`task::ZINC_ID`，同一亲本化学分子在不同方向任务中保留独立记录。
 - `compound_id`：冻结的A6PX预筛ID。
 - `hotspot_id`：`pair_id::H1`至`H3`。
@@ -15,19 +15,15 @@
 - `fingerprint_difference`：局部BW位点的表面指纹差异强度。
 - `detail_dd_median`：三次detail-mode中，目标得分减脱靶得分的中位差；越负表示计算上的目标选择性越有利。
 - `detail_dd_worst`：三次重复中最不利的DD，用于稳健性评估。
-- `mmgbsa_baseline_complete`：候选及其正确亲本种子均有完整、有效、可配对的MM/GBSA端点。
-- `mmgbsa_dual_endpoint_improved`：median MM/GBSA和worst-pose MM/GBSA均优于配对种子。
-- `final_candidate_904`：属于网站公开展示的904个PocketXMol最终候选；这些分子均满足采样稳健且detail-mode对接DD优于对应输入种子。
-- `strict_final_selected_111`：在904个最终候选内，进一步通过姿势、完整种子MM/GBSA基线、双端MM/GBSA改善及终态排序的111个严格精选子集。
-- `final_selected`：为兼容早期数据合同保留的旧字段，数值等同`strict_final_selected_111`；不再用于网页“最终候选”的命名。
-- `seed_zinc_id`：生成该候选时输入PocketXMol的亲本种子ZINC号。
-- `structure_download.bundle_url`：以A6PX候选ID命名的公开ZIP结构包。所有904个包都含1个候选配体SDF；进入438个MM/GBSA候选子集的包另含目标/脱靶复合物PDB。
-- `structure_download.complex_pdb_count`：该候选结构包内的计算复合物PDB数量；0表示该候选未进入438个MM/GBSA复合物子集，不代表结构文件丢失。
+- `final_candidate_904`：属于网站公开展示的904个Pocketxmol生成分子；这些分子均满足采样稳健且detail-mode对接DD优于对应输入种子。
+- `seed_zinc_id`：生成该分子时输入Pocketxmol的亲本种子ZINC号。
+- `structure_download.bundle_url`：以A6PX分子ID命名的公开ZIP结构包。所有904个包都含1个生成分子配体SDF；在有计算复合物证据时，包内还包含目标/脱靶复合物PDB。
+- `structure_download.complex_pdb_count`：该分子结构包内的计算复合物PDB数量；0表示该结构包没有可公开的计算复合物PDB，不代表配体结构文件丢失。
 - `structure_download.complex_pdbs`：ZIP内每个复合物PDB的受体角色（target/offtarget）、UniProt、姿势簇、文件名、大小及SHA-256。
 
 ## 结构文件
 
-结构包内的SDF和PDB均来自冻结计算证据并经过哈希核验。PDB是用于MM/GBSA的计算受体–配体复合物，不是PDB数据库中的实验解析结构。904个候选均有配体SDF；438个候选共有1,444个复合物PDB。其余466个候选只提供配体SDF，因为它们没有进入跨域短名单后的MM/GBSA复合物构建阶段。
+结构包内的SDF和PDB均来自冻结计算证据并经过哈希核验。PDB是计算受体–配体复合物，不是PDB数据库中的实验解析结构。904个Pocketxmol生成分子均有配体SDF；在具有计算复合物证据时，结构包同时提供对应PDB。
 
 ## 空值
 

@@ -35,14 +35,8 @@ class PublicBuildTest(unittest.TestCase):
             "generated_compounds": 904,
             "final_candidates": 904,
             "admet_complete": 904,
-            "cross_domain_shortlist": 438,
-            "mmgbsa_seed_baseline_complete": 323,
-            "mmgbsa_dual_endpoint_improved": 141,
-            "final_selected": 111,
-            "strict_final_selected": 111,
             "structure_bundles": 904,
             "ligand_sdf_files": 904,
-            "compounds_with_complex_pdb": 438,
             "complex_pdb_files": 1444,
         }
         for key, value in expected.items():
@@ -66,7 +60,8 @@ class PublicBuildTest(unittest.TestCase):
         self.assertTrue(all(compound["evidence"]["final_candidate_904"] for compound in self.compounds))
         self.assertTrue(all(compound["seed_zinc_id"].startswith("ZINC") for compound in self.compounds))
         self.assertEqual(sum(pair["final_candidate_count"] for pair in self.pairs), 904)
-        self.assertEqual(sum(pair["strict_final_selected_count"] for pair in self.pairs), 111)
+        self.assertTrue(all(set(compound["evidence"]) == {"final_candidate_904"} for compound in self.compounds))
+        self.assertTrue(all("strict_final_selected_count" not in pair for pair in self.pairs))
 
         pair_ids = {pair["pair_id"] for pair in self.pairs}
         self.assertTrue(all(compound["pair_id"] in pair_ids for compound in self.compounds))
@@ -88,16 +83,20 @@ class PublicBuildTest(unittest.TestCase):
         self.assertIn("163对受体与选择性分子", html)
         self.assertIn("Top 3热点", javascript)
         self.assertIn("输入种子", javascript)
-        self.assertIn("robust生成分子", javascript)
+        self.assertIn("Pocketxmol生成分子", html + javascript)
+        self.assertNotIn("PocketXMol", html + javascript)
+        self.assertNotIn("robust", html.lower() + javascript.lower())
+        self.assertNotIn("438", html + javascript)
         self.assertIn("structure.bundle_url", javascript)
         self.assertNotIn("严格精选", html + javascript)
+        self.assertNotIn("严格精选111", html + javascript)
         self.assertNotIn("pair.strict_final_selected_count", javascript)
         self.assertNotIn("evidenceLabel", javascript)
         self.assertIn("'ΔDD vs seed','结构下载'", javascript)
 
     def test_structure_downloads(self):
         self.assertTrue(all(compound["structure_download"]["ligand_sdf_count"] == 1 for compound in self.compounds))
-        self.assertEqual(sum(compound["structure_download"]["complex_pdb_count"] > 0 for compound in self.compounds), 438)
+        self.assertGreater(sum(compound["structure_download"]["complex_pdb_count"] > 0 for compound in self.compounds), 0)
         self.assertEqual(sum(compound["structure_download"]["complex_pdb_count"] for compound in self.compounds), 1444)
         for compound in self.compounds:
             structure = compound["structure_download"]

@@ -162,19 +162,15 @@ def build(repo: Path, output_tar: Path) -> dict[str, object]:
         manifest = {
             "schema_version": "1.0",
             "build_date": date.today().isoformat(),
-            "scope": "904 candidate ligand SDF files; audited MM/GBSA complex PDB files for the 438-candidate subset",
+            "scope": "904 candidate ligand SDF files; computational receptor-ligand complex PDB files when available",
             "counts": {
                 "compounds": len(records),
                 "ligand_sdf_files": len(records),
-                "compounds_with_complex_pdb": sum(bool(record["complex_pdbs"]) for record in records),
                 "complex_pdb_files": sum(len(record["complex_pdbs"]) for record in records),
             },
             "sources": {
                 "candidate_master": master.as_posix(),
                 "ligand_index": ADMET.as_posix(),
-                "mmgbsa_shortlist": shortlist.as_posix(),
-                "complex_evidence_run": COMPLEX_RUN.as_posix(),
-                "complex_audit_run": COMPLEX_AUDIT.as_posix(),
             },
             "records": records,
         }

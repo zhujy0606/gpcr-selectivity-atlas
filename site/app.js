@@ -83,7 +83,7 @@ function renderPairs(){
   ],query));
   $('#pair-count').textContent=`${items.length} / ${state.pairs.length} 对受体`;
   $('#pair-table').innerHTML=table(
-    ['排名','受体A','受体B','dMaSIF/MaSIF距离','Top 3差异热点','输入种子任务','robust生成分子','关联表'],
+    ['排名','受体A','受体B','dMaSIF/MaSIF距离','Top 3差异热点','输入种子任务','Pocketxmol生成分子','关联表'],
     items.map(pair=>`<tr class="clickable" data-pair="${pair.pair_id}">
       <td><b>#${pair.rank}</b></td>
       <td><b>${esc(pair.receptor_a.name)}</b><br><span class="mono">${pair.receptor_a.uniprot}</span></td>
@@ -132,7 +132,7 @@ function seedPanel(pair,seeds){
     <td>${boolBadge(seed.detail.target_pose_stable&&seed.detail.offtarget_pose_stable,'双端稳定','未双稳')}</td>
     <td><b>${seed.generated_compound_count}</b></td>
   </tr>`);
-  return `<div class="table-explainer"><b>PocketXMol输入种子</b><span>每一行是一条有向种子任务；保留fast mode及detail mode三次重复汇总。</span></div><div class="data-table evidence-table wide-table">${table(['输入种子ZINC','选择性方向','热点','fast目标','fast脱靶','fast DD','detail目标中位数','detail脱靶中位数','detail DD中位数','worst DD','DD SD','姿势稳定','生成分子数'],rows,'该受体对在904集合中没有关联的输入种子任务')}</div>`;
+  return `<div class="table-explainer"><b>Pocketxmol输入种子</b><span>每一行是一条有向种子任务；保留fast mode及detail mode三次重复汇总。</span></div><div class="data-table evidence-table wide-table">${table(['输入种子ZINC','选择性方向','热点','fast目标','fast脱靶','fast DD','detail目标中位数','detail脱靶中位数','detail DD中位数','worst DD','DD SD','姿势稳定','生成分子数'],rows,'该受体对在904集合中没有关联的输入种子任务')}</div>`;
 }
 
 function compoundPanel(pair,compounds){
@@ -154,7 +154,7 @@ function compoundPanel(pair,compounds){
       <td><a class="structure-link" href="${esc(structure.bundle_url)}" download title="下载${compound.compound_id}结构包">${structureText} ↓</a></td>
     </tr>`;
   });
-  return `<div class="table-explainer"><b>robust选择性生成分子</b><span>这里展示该受体对在904个robust最终候选集合中的全部分子；结构下载包含配体SDF，并在可用时包含计算复合物PDB。</span></div><div class="data-table evidence-table wide-table molecule-table">${table(['生成分子 / SMILES','选择性方向','输入种子ZINC','与种子相似度','MW','cLogP','QED','SA','detail DD','worst DD','ΔDD vs seed','结构下载'],rows,'该受体对在904集合中没有robust生成分子')}</div>`;
+  return `<div class="table-explainer"><b>Pocketxmol生成分子</b><span>这里展示该受体对在904个Pocketxmol生成分子集合中的全部记录；结构下载包含配体SDF，并在可用时包含计算复合物PDB。</span></div><div class="data-table evidence-table wide-table molecule-table">${table(['生成分子 / SMILES','选择性方向','输入种子ZINC','与种子相似度','MW','cLogP','QED','SA','detail DD','worst DD','ΔDD vs seed','结构下载'],rows,'该受体对在904集合中没有Pocketxmol生成分子')}</div>`;
 }
 
 function showPair(pair){
@@ -170,12 +170,12 @@ function showPair(pair){
       <span><small>dMaSIF/MaSIF距离</small><b>${fmt(pair.surface_distance,3)}</b></span>
       <span><small>Top差异热点</small><b>${esc(pair.hotspots[0]?.bw)}</b></span>
       <span><small>输入种子任务</small><b>${seeds.length}</b></span>
-      <span><small>robust生成分子</small><b>${compounds.length}</b></span>
+      <span><small>Pocketxmol生成分子</small><b>${compounds.length}</b></span>
     </div>
     <div class="evidence-tabs" role="tablist" aria-label="受体对关联数据表">
       <button class="evidence-tab active" role="tab" aria-selected="true" data-panel-target="hotspots">Top 3热点 <b>${pair.hotspots.length}</b></button>
       <button class="evidence-tab" role="tab" aria-selected="false" data-panel-target="seeds">输入种子 <b>${seeds.length}</b></button>
-      <button class="evidence-tab" role="tab" aria-selected="false" data-panel-target="molecules">robust生成分子 <b>${compounds.length}</b></button>
+      <button class="evidence-tab" role="tab" aria-selected="false" data-panel-target="molecules">Pocketxmol生成分子 <b>${compounds.length}</b></button>
     </div>
     <section class="evidence-panel active" data-panel="hotspots">${hotspotPanel(pair)}</section>
     <section class="evidence-panel" data-panel="seeds" hidden>${seedPanel(pair,seeds)}</section>

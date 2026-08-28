@@ -45,10 +45,9 @@
         },
         "evidence": {
           "type": "object",
-          "required": ["final_candidate_904", "strict_final_selected_111"],
+          "required": ["final_candidate_904"],
           "properties": {
-            "final_candidate_904": {"type": "boolean", "const": true},
-            "strict_final_selected_111": {"type": "boolean"}
+            "final_candidate_904": {"type": "boolean", "const": true}
           }
         }
       }
