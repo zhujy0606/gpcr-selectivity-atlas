@@ -133,7 +133,7 @@ function seedPanel(pair,seeds){
     <td>${boolBadge(seed.detail.target_pose_stable&&seed.detail.offtarget_pose_stable,'Stable at both receptors','Not stable at both')}</td>
     <td><b>${seed.generated_compound_count}</b></td>
   </tr>`);
-  return `<div class="table-explainer"><b>Pocketxmol input seeds</b><span>Each row represents a directed seed task with fast-mode results and the three-repeat detail-mode summary.</span></div><div class="data-table evidence-table wide-table">${table(['Input seed ZINC','Selectivity direction','Hotspot','Fast target','Fast off-target','Fast DD','Detail target median','Detail off-target median','Detail DD median','Worst DD','DD SD','Pose stability','Generated compounds'],rows,'No input seed records are linked to this receptor pair in the 904-compound collection.')}</div>`;
+  return `<div class="table-explainer"><b>Pocketxmol input seeds</b><span>Each row represents a directed seed task with fast-mode results and the three-repeat detail-mode summary. ΔE = E<sub>target</sub> − E<sub>off-target</sub>; more negative values indicate a stronger predicted preference for the target receptor.</span></div><div class="data-table evidence-table wide-table">${table(['Input seed ZINC','Selectivity direction','Hotspot','Fast E<sub>target</sub> (kcal/mol)','Fast E<sub>off-target</sub> (kcal/mol)','Fast ΔE (kcal/mol)','Detail E<sub>target</sub> median (kcal/mol)','Detail E<sub>off-target</sub> median (kcal/mol)','Detail ΔE median (kcal/mol)','Worst ΔE (kcal/mol)','ΔE SD (kcal/mol)','Pose stability','Generated compounds'],rows,'No input seed records are linked to this receptor pair in the 904-compound collection.')}</div>`;
 }
 
 function detailModeCompoundPanel(pair,compounds){
@@ -153,7 +153,7 @@ function detailModeCompoundPanel(pair,compounds){
     <td>${fmt(compound.detail.dd_sd,3)}</td>
     <td>${boolBadge(compound.high_confidence,'High confidence','Selected with limitations')}</td>
   </tr>`);
-  return `<div class="table-explainer"><b>Detail-mode selected compounds</b><span>Frozen seed compounds retained after fast-mode screening and three-repeat detail-mode evaluation for receptor pairs with no compounds in the 904 Pocketxmol collection. These records are not Pocketxmol-generated compounds.</span></div><div class="data-table evidence-table wide-table">${table(['ZINC compound','Selectivity direction','Hotspot','Fast rank','Fast target','Fast off-target','Fast DD','Detail target median','Detail off-target median','Detail DD median','Best DD','Worst DD','DD SD','Evidence status'],rows,'No detail-mode selected compounds are linked to this receptor pair.')}</div>`;
+  return `<div class="table-explainer"><b>Detail-mode selected compounds</b><span>Frozen seed compounds retained after fast-mode screening and three-repeat detail-mode evaluation for receptor pairs with no compounds in the 904 Pocketxmol collection. These records are not Pocketxmol-generated compounds. ΔE = E<sub>target</sub> − E<sub>off-target</sub>; more negative values indicate a stronger predicted preference for the target receptor.</span></div><div class="data-table evidence-table wide-table">${table(['ZINC compound','Selectivity direction','Hotspot','Fast rank','Fast E<sub>target</sub> (kcal/mol)','Fast E<sub>off-target</sub> (kcal/mol)','Fast ΔE (kcal/mol)','Detail E<sub>target</sub> median (kcal/mol)','Detail E<sub>off-target</sub> median (kcal/mol)','Detail ΔE median (kcal/mol)','Best ΔE (kcal/mol)','Worst ΔE (kcal/mol)','ΔE SD (kcal/mol)','Evidence status'],rows,'No detail-mode selected compounds are linked to this receptor pair.')}</div>`;
 }
 
 function compoundPanel(pair,compounds){
@@ -175,7 +175,7 @@ function compoundPanel(pair,compounds){
       <td><a class="structure-link" href="${esc(structure.bundle_url)}" download title="Download the ${compound.compound_id} structure bundle">${structureText} ↓</a></td>
     </tr>`;
   });
-  return `<div class="table-explainer"><b>Pocketxmol-generated compounds</b><span>All records assigned to this receptor pair within the 904-compound collection. Downloads include a ligand SDF and computational complex PDB files when available.</span></div><div class="data-table evidence-table wide-table molecule-table">${table(['Generated compound / SMILES','Selectivity direction','Input seed ZINC','Similarity to seed','MW','cLogP','QED','SA','Detail DD','Worst DD','ΔDD vs seed','Structure download'],rows,'No Pocketxmol-generated compounds are linked to this receptor pair in the 904-compound collection.')}</div>`;
+  return `<div class="table-explainer"><b>Pocketxmol-generated compounds</b><span>All records assigned to this receptor pair within the 904-compound collection. ΔE = E<sub>target</sub> − E<sub>off-target</sub>; more negative values indicate a stronger predicted preference for the target receptor. Downloads include a ligand SDF and computational complex PDB files when available.</span></div><div class="data-table evidence-table wide-table molecule-table">${table(['Generated compound / SMILES','Selectivity direction','Input seed ZINC','Similarity to seed','MW','cLogP','QED','SA','Detail ΔE (kcal/mol)','Worst ΔE (kcal/mol)','ΔE change vs seed (kcal/mol)','Structure download'],rows,'No Pocketxmol-generated compounds are linked to this receptor pair in the 904-compound collection.')}</div>`;
 }
 
 function showPair(pair){

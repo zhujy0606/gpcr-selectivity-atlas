@@ -13,9 +13,11 @@
 
 - `surface_distance`：dMaSIF表面指纹距离。不是序列相似度、活性态结构RMSD或实验亲和力。
 - `fingerprint_difference`：局部BW位点的表面指纹差异强度。
-- `detail_dd_median`：三次detail-mode中，目标得分减脱靶得分的中位差；越负表示计算上的目标选择性越有利。
-- `detail_dd_worst`：三次重复中最不利的DD，用于稳健性评估。
-- `final_candidate_904`：属于网站公开展示的904个Pocketxmol生成分子；这些分子均满足采样稳健且detail-mode对接DD优于对应输入种子。
+- `detail_dd_median`：网页公开标签为 `Detail ΔE`，定义为三次 detail-mode 中 `E_target − E_off-target` 的中位数，单位为 kcal/mol；越负表示计算上越偏向目标受体。
+- `detail_dd_worst`：网页公开标签为 `Worst ΔE`，表示三次重复中最不利的 ΔE，单位为 kcal/mol，用于稳健性评估。
+- `detail_dd_sd`：三次重复 ΔE 的标准差，单位为 kcal/mol。
+- `dd_change_vs_seed`：生成分子相对于输入种子的 ΔE 变化，单位为 kcal/mol。内部字段名为兼容既有冻结数据而保留；公开网页统一使用 ΔE 表述。
+- `final_candidate_904`：属于网站公开展示的904个Pocketxmol生成分子；这些分子均满足采样稳健且 detail-mode ΔE 优于对应输入种子。
 - `seed_zinc_id`：生成该分子时输入Pocketxmol的亲本种子ZINC号。
 - `structure_download.bundle_url`：以A6PX分子ID命名的公开ZIP结构包。所有904个包都含1个生成分子配体SDF；在有计算复合物证据时，包内还包含目标/脱靶复合物PDB。
 - `structure_download.complex_pdb_count`：该分子结构包内的计算复合物PDB数量；0表示该结构包没有可公开的计算复合物PDB，不代表配体结构文件丢失。

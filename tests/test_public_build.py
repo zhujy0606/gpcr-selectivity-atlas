@@ -110,7 +110,10 @@ class PublicBuildTest(unittest.TestCase):
         self.assertIn("structure.bundle_url", javascript)
         self.assertNotIn("pair.strict_final_selected_count", javascript)
         self.assertNotIn("evidenceLabel", javascript)
-        self.assertIn("'ΔDD vs seed','Structure download'", javascript)
+        self.assertIn("'Detail ΔE (kcal/mol)'", javascript)
+        self.assertIn("'Worst ΔE (kcal/mol)'", javascript)
+        self.assertIn("'ΔE change vs seed (kcal/mol)'", javascript)
+        self.assertIn("ΔE = E<sub>target</sub> − E<sub>off-target</sub>", javascript)
 
     def test_structure_downloads(self):
         self.assertTrue(all(compound["structure_download"]["ligand_sdf_count"] == 1 for compound in self.compounds))
