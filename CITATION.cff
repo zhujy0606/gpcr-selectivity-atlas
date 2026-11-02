@@ -1,22 +1,35 @@
 cff-version: 1.2.0
-message: "If you use the GPCR Selectivity Atlas, please cite this dataset and software resource."
-title: "GPCR Selectivity Atlas: dMaSIF Surface, Receptor-Pair Hotspot and PocketXMol Dataset"
+message: "If you use these data or code, please cite this versioned research archive."
 type: dataset
-version: 0.1.0
-date-released: 2026-08-27
+title: "GPCR lipid-facing surface fingerprints and candidate screening: code, matrices and docking inputs"
+version: 0.2.0
+date-released: 2026-11-02
+doi: 10.5281/zenodo.23874436
+url: "https://zenodo.org/records/23874436"
+repository-code: "https://github.com/zhujy0606/gpcr-selectivity-atlas"
+license:
+  - CC-BY-4.0
+  - MIT
 authors:
   - family-names: "Zhu"
     given-names: "Jingyi"
-    affiliation: "Shandong University"
+    affiliation: "State Key Laboratory of Microbial Technology, Shandong University, Qingdao 266237, China"
     orcid: "https://orcid.org/0009-0003-8404-0455"
-repository-code: "https://github.com/zhujy0606/gpcr-selectivity-atlas"
-url: "https://zhujy0606.github.io/gpcr-selectivity-atlas/"
-keywords:
-  - GPCR
-  - dMaSIF
-  - molecular surface
-  - receptor selectivity
-  - molecular docking
-  - PocketXMol
-  - MM/GBSA
-  - ADMET
+  - family-names: "Li"
+    given-names: "Hengde"
+    affiliation: "School of Data and Information Sciences, The University of North Carolina at Chapel Hill, Chapel Hill, North Carolina 27514, United States of America"
+  - family-names: "Xu"
+    given-names: "Yuwen"
+    affiliation: "Shandong Institute for Food and Drug Control, Jinan 250000, China"
+  - family-names: "Zhao"
+    given-names: "Xia"
+    affiliation: "National Institutes for Drug Control, State Key Laboratory of Drug Regulatory Science, Beijing 102629, China"
+  - family-names: "Xiao"
+    given-names: "Min"
+    affiliation: "National Glycoengineering Research Center, Shandong University, Qingdao 266237, China"
+  - family-names: "Wang"
+    given-names: "Lushan"
+    affiliation: "State Key Laboratory of Microbial Technology, Shandong University, Qingdao 266237, China"
+  - family-names: "Jiang"
+    given-names: "Xukai"
+    affiliation: "National Glycoengineering Research Center, Shandong University, Qingdao 266237, China"

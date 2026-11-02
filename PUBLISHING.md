@@ -1,52 +1,22 @@
-# 公开发布方案
+# 公开发布记录
 
-## 平台决定
+- 网站：https://zhujy0606.github.io/gpcr-selectivity-atlas/
+- GitHub：https://github.com/zhujy0606/gpcr-selectivity-atlas
+- 固定版本归档：[Zenodo v0.2.0](https://doi.org/10.5281/zenodo.23874436)，2026-11-02公开。
 
-- 网页、CSV/JSON及按候选拆分的结构ZIP：GitHub Pages；
-- 约1.1 GB dMaSIF原始资产：Zenodo；
-- 可选高速镜像：Cloudflare R2，不作为学术主档案。
+## 已完成
 
-网站约151 MB，其中约146 MB为904个按候选拆分的结构ZIP；每个ZIP均远低于GitHub单文件限制，适合静态托管。约1.1 GB dMaSIF资产不进入Git仓库；Zenodo记录负责永久版本、DOI、作者、许可证和推荐引用。网页中的每个原始dMaSIF资产下载链接最终指向Zenodo版本记录。
+- [x] GitHub Pages公开静态浏览页面。
+- [x] 原创数据CC BY 4.0，原创代码MIT；第三方材料按原条款处理。
+- [x] 作者顺序、单位、ORCID与投稿稿核对，Z.L.未列，Xia Zhao单位采用投稿稿。
+- [x] Zenodo四包：gpcr_code_v0.2.0.zip、gpcr_fingerprints_v0.2.0.zip、gpcr_docking_inputs_v0.2.0.zip、gpcr_results_v0.2.0.zip；另附README.md和SHA256SUMS.txt。
+- [x] 六文件服务器大小/MD5与本地一致，DOI解析与匿名访问通过。
+- [x] 将DOI及大文件下载入口写入网站、README和CITATION.cff。
 
-## GitHub Pages发布
+## 归档范围
 
-`public_database/`作为独立公开仓库根目录。工作流`.github/workflows/deploy-pages.yml`会在`main`分支更新时发布`site/`。
-
-- 公开仓库：https://github.com/zhujy0606/gpcr-selectivity-atlas
-- 公开网站：https://zhujy0606.github.io/gpcr-selectivity-atlas/
-
-发布步骤：
-
-1. [x] 创建公开GitHub仓库`zhujy0606/gpcr-selectivity-atlas`；
-2. [x] 将`public_database/`内容作为仓库根目录推送到`main`；
-3. [x] 将Pages Source设为GitHub Actions；
-4. [x] 完成Deploy GPCR Selectivity Atlas工作流；
-5. [x] 将生成的网址写回README；
-6. [ ] Zenodo发布后回填DOI和大型资产链接。
-
-## Zenodo发布
-
-建议一个Zenodo Dataset记录，文件控制在三个以内：
-
-1. `gpcr_selectivity_atlas_v0.1.0_public_tables.zip`（含904个结构ZIP）；
-2. `gpcr_selectivity_atlas_v0.1.0_dmasif_assets.zip`；
-3. `SHA256SUMS.txt`。
-
-发布前必须确认：
-
-- 正式标题、作者顺序、单位和ORCID；
-- 数据许可证；
-- PocketXMol、ZINC、GPCRdb、PDB、UniProt和ADMET-AI衍生数据的再分发边界；
-- 版本号与发布日期；
-- 说明所有结果属于计算优先级排序证据。
-
-Zenodo DOI产生后，回填网站下载链接、`CITATION.cff`和README。
-
-当前冻结作者信息：朱景一（Jingyi Zhu），山东大学（Shandong University），ORCID `0009-0003-8404-0455`。
+286受体×417位置×16维指纹矩阵；287项表面资产目录；163受体对；244条种子任务（242独立ZINC）；11,094个生成物及406条匹配母体任务的准备输入；904个生成候选物与438个Pareto候选物，以及脚本、参数、映射和结果。完整百万ZINC坐标库不再次分发，提供精确标识、来源及重建说明。四包解压到同一目录。
 
 ## 更新策略
 
-- GitHub仓库：网页代码与小型规范数据的持续版本；
-- Zenodo：每次正式数据冻结创建新版本；
-- DOI引用固定版本，网页默认指向最新版本；
-- 每次构建保留源文件SHA-256和导出测试结果。
+Zenodo中的v0.2.0文件固定不变。后续科学数据更新创建新的Zenodo版本并取得对应DOI，保留旧版可引用。网页持续维护，固定版本引用以CITATION.cff和Zenodo为准。大二进制包不加入Git仓库。

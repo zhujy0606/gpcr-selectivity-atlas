@@ -9,7 +9,8 @@
 
 - 公开网站：https://zhujy0606.github.io/gpcr-selectivity-atlas/
 - GitHub仓库：https://github.com/zhujy0606/gpcr-selectivity-atlas
-- 作者：朱景一（山东大学），ORCID：[0009-0003-8404-0455](https://orcid.org/0009-0003-8404-0455)
+- 数据归档作者及单位：见[CITATION.cff](CITATION.cff)，按投稿稿七位作者顺序。
+- 固定版本DOI：[10.5281/zenodo.23874436](https://doi.org/10.5281/zenodo.23874436)（v0.2.0；2026-11-02）。
 
 ## 构建
 
@@ -31,8 +32,8 @@ python3 -m http.server 8080
 
 ## 推荐公开架构
 
-本项目采用GitHub Pages托管网页，Zenodo托管约1.1 GB dMaSIF原始资产并提供DOI。发布步骤见`PUBLISHING.md`，GitHub Pages工作流已配置在`.github/workflows/deploy-pages.yml`。
+本项目采用GitHub Pages托管网页；Zenodo v0.2.0保存代码、指纹矩阵、实际对接输入和配套结果，共四个ZIP（约1.42 GB），另附README和SHA256校验表。发布步骤见`PUBLISHING.md`，GitHub Pages工作流已配置在`.github/workflows/deploy-pages.yml`。
 
 ## 发布边界
 
-当前站点已经通过GitHub Pages公开。受体对的Pocketxmol生成分子表中，结构下载包按A6PX ID组织，ZIP内含配体SDF以及可用的计算复合物PDB；每个包和内部结构文件均记录SHA-256。约1.1 GB的dMaSIF二进制资产当前只发布元数据清单；应在确认再分发条款后上传Zenodo，再回填公开URL和SHA-256。
+当前站点已经通过GitHub Pages公开。受体对的Pocketxmol生成分子表中，结构下载包按A6PX ID组织，ZIP内含配体SDF以及可用的计算复合物PDB；每个包和内部结构文件均记录SHA-256。完整指纹矩阵和dMaSIF表面资产已公开存档于[Zenodo](https://doi.org/10.5281/zenodo.23874436)，原始二进制资产从其中的gpcr_fingerprints_v0.2.0.zip下载。原创数据CC BY 4.0、原创代码MIT，第三方内容保留原许可。四包及校验值见[归档清单](site/data/archive.json)。

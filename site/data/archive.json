@@ -1,0 +1,41 @@
+{
+  "version": "0.2.0",
+  "deposited": true,
+  "doi": "10.5281/zenodo.23874436",
+  "license_finalized": true,
+  "files": [
+    {
+      "name": "gpcr_code_v0.2.0.zip",
+      "bytes": 9357651,
+      "files": 396,
+      "sha256": "09778d52dcbf576a2884dcab971e7109c47d0dea0a58ff9d6463365c0627207c",
+      "download_url": "https://zenodo.org/records/23874436/files/gpcr_code_v0.2.0.zip?download=1"
+    },
+    {
+      "name": "gpcr_fingerprints_v0.2.0.zip",
+      "bytes": 1106793868,
+      "files": 2011,
+      "sha256": "8093bc8b264ec3677bad7e35e5de3e796358ab1986dfd378ecc020dfa79739ac",
+      "download_url": "https://zenodo.org/records/23874436/files/gpcr_fingerprints_v0.2.0.zip?download=1"
+    },
+    {
+      "name": "gpcr_docking_inputs_v0.2.0.zip",
+      "bytes": 88585602,
+      "files": 25042,
+      "sha256": "9be218039bec57a509b8ae643feb4d6474dc6e876084b0c73246e196d445d7be",
+      "download_url": "https://zenodo.org/records/23874436/files/gpcr_docking_inputs_v0.2.0.zip?download=1"
+    },
+    {
+      "name": "gpcr_results_v0.2.0.zip",
+      "bytes": 218142719,
+      "files": 1636,
+      "sha256": "5da9bd870b51504caee0d823020f16da9d4a4894b326fb997ffb42bfce1d55f6",
+      "download_url": "https://zenodo.org/records/23874436/files/gpcr_results_v0.2.0.zip?download=1"
+    }
+  ],
+  "total_bytes": 1422879840,
+  "total_entries": 29085,
+  "reserved_doi": "10.5281/zenodo.23874436",
+  "record_url": "https://zenodo.org/records/23874436",
+  "doi_url": "https://doi.org/10.5281/zenodo.23874436"
+}

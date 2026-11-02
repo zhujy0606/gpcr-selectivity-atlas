@@ -68,7 +68,7 @@ function showReceptor(receptor){
       <span>${receptor.core_assets_complete?'Core assets complete':'Core assets missing'}</span>
     </div>
     <div class="data-table evidence-table">${table(['File','Format','Contents','Size','Status'],assetRows)}</div>
-    <aside class="notice amber detail-note"><strong>Availability</strong><span>The file-level inventory is public. Large binary assets remain pending deposition in an external archive with permanent download links.</span></aside>
+    <aside class="notice amber detail-note"><strong>Availability</strong><span>Surface binaries and the fingerprint matrix are available in the <a href="https://zenodo.org/records/23874436/files/gpcr_fingerprints_v0.2.0.zip?download=1">Zenodo fingerprint archive (1.11 GB)</a>. <a href="https://doi.org/10.5281/zenodo.23874436">Version 0.2.0 · DOI 10.5281/zenodo.23874436</a>. Unzip the archive to access the per-receptor files.</span></aside>
   `);
 }
 

@@ -470,7 +470,8 @@ def build() -> dict[str, Any]:
                 "nearest_surface_neighbor": nearest.get(receptor),
                 "mds": mds_by_id.get(receptor),
                 "selected_pair_count": pair_participation[receptor],
-                "public_raw_asset_status": "pending_external_archive",
+                "public_raw_asset_status": "archived_zenodo",
+                "public_raw_archive_url": "https://zenodo.org/records/23874436/files/gpcr_fingerprints_v0.2.0.zip?download=1",
             }
         )
 
@@ -570,7 +571,7 @@ def build() -> dict[str, Any]:
         "limitations": [
             "All docking, ADMET, pose-stability, dMaSIF and MM/GBSA values are computational predictions.",
             "The active-state structural similarity matrix has not yet been computed.",
-            "Large dMaSIF binary assets remain local until an external public archive and redistribution terms are confirmed.",
+            "Surface binaries and the fingerprint matrix are archived in Zenodo v0.2.0 (DOI: 10.5281/zenodo.23874436); original data are CC BY 4.0 and third-party terms are retained.",
             "The frozen MDS table covers 275 receptors while the canonical distance matrix covers 286.",
         ],
     }
