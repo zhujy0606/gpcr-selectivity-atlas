@@ -1,5 +1,7 @@
 # 公开发布记录
 
+2026-11-12网页数据更新：纳入全部904个候选物及178条母体任务的MM-GBSA配对结果、3733条构象能量，并突出原438个跨域Pareto优选项。新增独立CSV、字段定义和来源哈希；MM-GBSA改善与Pareto成员资格分别记录。本次仅更新GitHub Pages及仓库，不改动固定Zenodo v0.2.0 DOI或既有结构ZIP；完整904项MM-GBSA更新不在该归档版本中。
+
 - 网站：https://zhujy0606.github.io/gpcr-selectivity-atlas/
 - GitHub：https://github.com/zhujy0606/gpcr-selectivity-atlas
 - 固定版本归档：[Zenodo v0.2.0](https://doi.org/10.5281/zenodo.23874436)，2026-11-02公开。

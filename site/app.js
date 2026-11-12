@@ -1,4 +1,5 @@
 const state={summary:null,receptors:[],pairs:[],seeds:[],compounds:[],detailModeCompounds:[]};
+const DATA_VERSION='20261112-mmgbsa-pareto';
 const $=selector=>document.querySelector(selector);
 const esc=value=>String(value??'—').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const fmt=(value,digits=2)=>value===null||value===undefined||value===''?'—':typeof value==='number'?value.toLocaleString('en-US',{maximumFractionDigits:digits}):esc(value);
@@ -6,16 +7,19 @@ const includes=(values,query)=>values.join(' ').toLowerCase().includes(query.tri
 const badge=(text,kind='')=>`<span class="badge ${kind}">${esc(text)}</span>`;
 const boolBadge=(value,yes='Yes',no='No')=>`<span class="badge ${value?'good':''}">${value?yes:no}</span>`;
 const table=(headers,rows,empty='No matching records')=>`<table><thead><tr>${headers.map(header=>`<th>${header}</th>`).join('')}</tr></thead><tbody>${rows.length?rows.join(''):`<tr><td class="empty-cell" colspan="${headers.length}">${empty}</td></tr>`}</tbody></table>`;
+const shortlistBadge=compound=>compound.pareto.shortlisted?'<span class="pareto-badge">Final Pareto shortlist</span>':'';
 
 async function load(){
   const names=['summary','receptors','pairs','seeds','compounds','detail_mode_compounds'];
-  const data=await Promise.all(names.map(name=>fetch(`data/${name}.json`).then(response=>{
+  const data=await Promise.all(names.map(name=>fetch(`data/${name}.json?v=${DATA_VERSION}`).then(response=>{
     if(!response.ok)throw new Error(`${name}: ${response.status}`);
     return response.json();
   })));
   [state.summary,state.receptors,state.pairs,state.seeds,state.compounds,state.detailModeCompounds]=data;
   renderReceptors();
   renderPairs();
+  const counts=state.summary.counts;
+  $('#mmgbsa-summary').textContent=`All ${counts.mmgbsa_complete_candidates} docking-improved candidates have complete matched-parent MM-GBSA comparisons. ${counts.mmgbsa_improved_candidates} (${(100*counts.mmgbsa_improved_candidates/counts.mmgbsa_complete_candidates).toFixed(1)}%) show a more favorable endpoint differential than their actual seeds. Open a receptor pair and select MM-GBSA rescoring to inspect the results.`;
   $('#footer-version').textContent=`${state.summary.version} · ${state.summary.build_date}`;
 }
 
@@ -80,7 +84,7 @@ function renderPairs(){
   const query=$('#pair-search').value;
   const items=state.pairs.filter(pair=>includes([
     pair.pair_id,pair.receptor_a.uniprot,pair.receptor_a.name,pair.receptor_b.uniprot,pair.receptor_b.name,
-    ...pair.input_seed_zinc_ids,...pair.detail_mode_selected_zinc_ids,...pair.hotspots.flatMap(hotspot=>[hotspot.bw,hotspot.residues])
+    ...pair.input_seed_zinc_ids,...pair.detail_mode_selected_zinc_ids,...pairMolecules(pair.pair_id).map(compound=>compound.compound_id),...pair.hotspots.flatMap(hotspot=>[hotspot.bw,hotspot.residues])
   ],query));
   $('#pair-count').textContent=`${items.length} / ${state.pairs.length} receptor pairs`;
   $('#pair-table').innerHTML=table(
@@ -92,7 +96,7 @@ function renderPairs(){
       <td><b>${fmt(pair.surface_distance,3)}</b></td>
       <td>${pair.hotspots.map(hotspot=>badge(hotspot.bw,'good')).join(' ')}</td>
       <td><b>${pairSeeds(pair.pair_id).length}</b><br><small>${pair.input_seed_zinc_ids.length} ZINC IDs</small></td>
-      <td><b class="molecule-count">${pairMolecules(pair.pair_id).length}</b>${pairMolecules(pair.pair_id).length===0?`<br><small>${pairDetailModeCompounds(pair.pair_id).length} detail-mode selected</small>`:''}</td>
+      <td><b class="molecule-count">${pairMolecules(pair.pair_id).length}</b>${pairMolecules(pair.pair_id).length===0?`<br><small>${pairDetailModeCompounds(pair.pair_id).length} detail-mode selected</small>`:`<br><small class="pareto-count">${pair.pareto_shortlist_count} in final Pareto shortlist</small>`}</td>
       <td><span class="row-action">Open evidence tables →</span></td>
     </tr>`)
   );
@@ -160,8 +164,8 @@ function compoundPanel(pair,compounds){
   const rows=compounds.map(compound=>{
     const structure=compound.structure_download;
     const structureText=structure.complex_pdb_count?`1 SDF + ${structure.complex_pdb_count} PDB`:'1 SDF';
-    return `<tr>
-      <td><b class="mono">${compound.compound_id}</b><span class="truncate mono molecule-smiles" title="${esc(compound.canonical_smiles)}">${esc(compound.canonical_smiles)}</span></td>
+    return `<tr${compound.pareto.shortlisted?' class="pareto-shortlisted"':''}>
+      <td><b class="mono">${compound.compound_id}</b>${shortlistBadge(compound)}<span class="truncate mono molecule-smiles" title="${esc(compound.canonical_smiles)}">${esc(compound.canonical_smiles)}</span></td>
       <td>${esc(compound.target_name||compound.target_uniprot)} → ${esc(compound.offtarget_name||compound.offtarget_uniprot)}</td>
       <td><span class="seed-chip compact-seed"><small>INPUT SEED</small><b class="mono">${esc(compound.seed_zinc_id)}</b></span></td>
       <td>${fmt(compound.similarity_to_seed,3)}</td>
@@ -172,10 +176,32 @@ function compoundPanel(pair,compounds){
       <td><b>${fmt(compound.docking.dd_median,3)}</b></td>
       <td>${fmt(compound.docking.dd_worst,3)}</td>
       <td><b>${fmt(compound.docking.dd_change_vs_seed,3)}</b></td>
+      <td><b>${fmt(compound.mmgbsa.delta_vs_parent_kcal_mol,4)}</b><br>${badge(compound.mmgbsa.improved_vs_parent?'More favorable':'Not improved',compound.mmgbsa.improved_vs_parent?'good':'')}</td>
       <td><a class="structure-link" href="${esc(structure.bundle_url)}" download title="Download the ${compound.compound_id} structure bundle">${structureText} ↓</a></td>
     </tr>`;
   });
-  return `<div class="table-explainer"><b>Pocketxmol-generated compounds</b><span>All records assigned to this receptor pair within the 904-compound collection. ΔE = E<sub>target</sub> − E<sub>off-target</sub>; more negative values indicate a stronger predicted preference for the target receptor. Downloads include a ligand SDF and computational complex PDB files when available.</span></div><div class="data-table evidence-table wide-table molecule-table">${table(['Generated compound / SMILES','Selectivity direction','Input seed ZINC','Similarity to seed','MW','cLogP','QED','SA','Detail ΔE (kcal/mol)','Worst ΔE (kcal/mol)','ΔE change vs seed (kcal/mol)','Structure download'],rows,'No Pocketxmol-generated compounds are linked to this receptor pair in the 904-compound collection.')}</div>`;
+  return `<div class="table-explainer"><b>Pocketxmol-generated compounds</b><span>All records assigned to this receptor pair within the 904-compound collection. ΔE = E<sub>target</sub> − E<sub>off-target</sub>; more negative values indicate a stronger predicted preference for the target receptor. MM-GBSA δ is the candidate-minus-parent change in endpoint differential; see the rescoring tab for details. Downloads include a ligand SDF and computational complex PDB files when available.</span></div><div class="data-table evidence-table wide-table molecule-table">${table(['Generated compound / SMILES','Selectivity direction','Input seed ZINC','Similarity to seed','MW','cLogP','QED','SA','Detail ΔE (kcal/mol)','Worst ΔE (kcal/mol)','ΔE change vs seed (kcal/mol)','MM-GBSA δ (kcal/mol)','Structure download'],rows,'No Pocketxmol-generated compounds are linked to this receptor pair in the 904-compound collection.')}</div>`;
+}
+
+function mmgbsaPanel(compounds){
+  const improved=compounds.filter(compound=>compound.mmgbsa.improved_vs_parent).length;
+  const rows=compounds.map(compound=>{
+    const result=compound.mmgbsa;
+    return `<tr${compound.pareto.shortlisted?' class="pareto-shortlisted"':''}>
+      <td><b class="mono">${esc(compound.compound_id)}</b>${shortlistBadge(compound)}<br><small class="mono">${esc(compound.task)}</small></td>
+      <td>${esc(compound.target_name||compound.target_uniprot)} → ${esc(compound.offtarget_name||compound.offtarget_uniprot)}</td>
+      <td><b class="mono">${esc(compound.seed_zinc_id)}</b></td>
+      <td>${fmt(result.differential_kcal_mol,4)}</td>
+      <td>${fmt(result.parent_differential_kcal_mol,4)}</td>
+      <td><b>${fmt(result.delta_vs_parent_kcal_mol,4)}</b></td>
+      <td>${badge(result.improved_vs_parent?'More favorable':'Not improved',result.improved_vs_parent?'good':'')}</td>
+    </tr>`;
+  });
+  return `<div class="table-explainer"><b>MM-GBSA rescoring</b><span>${compounds.length?`${improved} of ${compounds.length} displayed candidates (${(100*improved/compounds.length).toFixed(1)}%) have δ &lt; 0. Results include candidates that did not improve.`:'No candidates match the current shortlist filter.'}</span></div>
+    <p class="mmgbsa-definition">D = E<sub>target</sub> − median(E<sub>off-target cluster representatives</sub>); δ = D<sub>candidate</sub> − D<sub>actual parent</sub>. A negative δ indicates a more favorable endpoint differential for the candidate. All energies are in kcal/mol; direction is shown as target → off-target.</p>
+    <div class="data-table evidence-table mmgbsa-table">${table(['Generated compound','Target → off-target','Actual parent ZINC','Candidate D (kcal/mol)','Parent D (kcal/mol)','δ (kcal/mol)','MM-GBSA change vs parent'],rows)}</div>
+    <div class="mmgbsa-downloads"><a class="table-download" href="downloads/mmgbsa_candidates_904.csv" download>All 904 comparisons (CSV)</a><a class="table-download" href="downloads/mmgbsa_parents_178.csv" download>178 parent baselines (CSV)</a><a class="table-download" href="downloads/mmgbsa_pose_endpoints_3733.csv" download>3,733 pose endpoints (CSV)</a><a class="table-download" href="data/mmgbsa_protocol.json" download>Protocol and provenance (JSON)</a></div>
+    <aside class="notice detail-note"><strong>Evidence scope</strong><span>Single minimized snapshots with a different energy model; no entropy correction or membrane MD sampling. These are computational trends, not experimentally established selectivity. Pose-stability flags and separate target/off-target endpoints are retained in the downloads. Existing structure bundles may not contain every rescored pose.</span></aside>`;
 }
 
 function showPair(pair){
@@ -195,20 +221,30 @@ function showPair(pair){
       <span><small>Pocketxmol-generated compounds</small><b>${compounds.length}</b></span>
       ${compounds.length===0?`<span><small>Detail-mode selected compounds</small><b>${detailModeCompounds.length}</b></span>`:''}
     </div>
+    ${compounds.length?`<div class="shortlist-legend"><span><span class="pareto-badge">Final Pareto shortlist</span> Lavender rows identify the 438-member primary computational shortlist within the full 904-candidate collection. Membership requires the original eligibility criteria and at least two of the docking, drug-like-property and ADMET Pareto fronts. It does not indicate experimental validation or necessarily MM-GBSA improvement.</span><label class="shortlist-filter"><input id="shortlist-only" type="checkbox"> Show shortlisted candidates only</label><small id="compound-filter-count">Showing ${compounds.length} candidates; ${pair.pareto_shortlist_count} shortlisted.</small></div>`:''}
     <div class="evidence-tabs" role="tablist" aria-label="Receptor-pair evidence tables">
       <button class="evidence-tab active" role="tab" aria-selected="true" data-panel-target="hotspots">Top 3 hotspots <b>${pair.hotspots.length}</b></button>
       <button class="evidence-tab" role="tab" aria-selected="false" data-panel-target="seeds">Input seeds <b>${seeds.length}</b></button>
       <button class="evidence-tab" role="tab" aria-selected="false" data-panel-target="molecules">Pocketxmol compounds <b>${compounds.length}</b></button>
+      ${compounds.length?`<button class="evidence-tab" role="tab" aria-selected="false" data-panel-target="mmgbsa">MM-GBSA rescoring <b>${compounds.length}</b></button>`:''}
       ${compounds.length===0?`<button class="evidence-tab" role="tab" aria-selected="false" data-panel-target="detail-mode">Detail-mode compounds <b>${detailModeCompounds.length}</b></button>`:''}
     </div>
     <section class="evidence-panel active" data-panel="hotspots">${hotspotPanel(pair)}</section>
     <section class="evidence-panel" data-panel="seeds" hidden>${seedPanel(pair,seeds)}</section>
     <section class="evidence-panel" data-panel="molecules" hidden>${compoundPanel(pair,compounds)}</section>
+    ${compounds.length?`<section class="evidence-panel" data-panel="mmgbsa" hidden>${mmgbsaPanel(compounds)}</section>`:''}
     ${compounds.length===0?`<section class="evidence-panel" data-panel="detail-mode" hidden>${detailModeCompoundPanel(pair,detailModeCompounds)}</section>`:''}
   `);
   document.querySelectorAll('[data-panel-target]').forEach(button=>{
     button.onclick=()=>activateEvidencePanel(button.dataset.panelTarget);
   });
+  const shortlistOnly=$('#shortlist-only');
+  if(shortlistOnly)shortlistOnly.onchange=()=>{
+    const shown=shortlistOnly.checked?compounds.filter(compound=>compound.pareto.shortlisted):compounds;
+    $('[data-panel="molecules"]').innerHTML=compoundPanel(pair,shown);
+    $('[data-panel="mmgbsa"]').innerHTML=mmgbsaPanel(shown);
+    $('#compound-filter-count').textContent=`Showing ${shown.length} of ${compounds.length} candidates; ${pair.pareto_shortlist_count} shortlisted.`;
+  };
 }
 
 function activateEvidencePanel(panelName){

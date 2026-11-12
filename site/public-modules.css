@@ -407,6 +407,73 @@
   min-width: 1770px;
 }
 
+.mmgbsa-table table {
+  min-width: 1000px;
+}
+
+.mmgbsa-definition,
+.mmgbsa-archive-note {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.mmgbsa-downloads {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.pareto-shortlisted td,
+.pareto-shortlisted:hover td {
+  background: #f2eefb;
+}
+
+.pareto-shortlisted td:first-child {
+  box-shadow: inset 3px 0 #70549b;
+}
+
+.pareto-badge {
+  display: inline-block;
+  padding: 3px 7px;
+  margin: 4px 3px 2px 0;
+  border: 1px solid #b7a4d5;
+  border-radius: 4px;
+  background: #ede5fa;
+  color: #513775;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.pareto-count {
+  color: #513775;
+}
+
+.shortlist-legend {
+  display: grid;
+  gap: 7px;
+  padding: 12px 15px;
+  margin: 0 0 16px;
+  border: 1px solid #d8cde8;
+  background: #faf8ff;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.shortlist-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.shortlist-filter input {
+  width: auto;
+  accent-color: #70549b;
+}
+
 .molecule-smiles {
   max-width: 230px;
   margin-top: 4px;

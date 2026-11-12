@@ -15,6 +15,8 @@ from datetime import date
 from pathlib import Path
 from typing import Any, Iterable
 
+from mmgbsa import load_mmgbsa
+
 
 ROOT = Path(__file__).resolve().parents[1]
 HERE = Path(__file__).resolve().parent
@@ -37,6 +39,12 @@ SOURCES = {
     "pair_status": Path("deliverables/agent6_bidirectional_final_20260824/pairs_163_terminal_status.csv"),
     "direction_status": Path("deliverables/agent6_bidirectional_final_20260824/directions_326_terminal_status.csv"),
     "active_structure_refs": Path("result_analyse/slides_source_data/_allosteric_ref_gpcrdb_structures.csv"),
+    "mmgbsa_paired": Path("revise/analysis/mmgbsa_all904/paired_all904.csv"),
+    "mmgbsa_inventory": Path("revise/analysis/mmgbsa_all904/inventory.csv"),
+    "mmgbsa_endpoints": Path("revise/analysis/mmgbsa_all904/pose_endpoints.csv"),
+    "pareto_candidates": Path("runs/agent6_pocketxmol_bidirectional_production_pareto_20260731/pareto_candidates.csv"),
+    "pareto_shortlist": Path("deliverables/agent6_bidirectional_final_20260824/cross_domain_shortlist.csv"),
+    "pareto_summary": Path("deliverables/agent6_bidirectional_final_20260824/pareto_summary.json"),
 }
 
 ADMET_FIELDS = {
@@ -121,8 +129,8 @@ def dump_json(name: str, payload: Any) -> None:
         json.dump(payload, handle, ensure_ascii=False, separators=(",", ":"))
 
 
-def write_csv(name: str, payload: Iterable[dict[str, Any]], fields: list[str]) -> None:
-    with (DOWNLOADS / name).open("w", newline="", encoding="utf-8") as handle:
+def write_csv(name: str, payload: Iterable[dict[str, Any]], fields: list[str], encoding: str = "utf-8") -> None:
+    with (DOWNLOADS / name).open("w", newline="", encoding=encoding) as handle:
         writer = csv.DictWriter(handle, fieldnames=fields, extrasaction="ignore", lineterminator="\n")
         writer.writeheader()
         writer.writerows(payload)
@@ -148,7 +156,35 @@ def build() -> dict[str, Any]:
     DOWNLOADS.mkdir(parents=True, exist_ok=True)
 
     compound_source = rows(SOURCES["compounds_904"])
+    mmgbsa_candidates, mmgbsa_seeds, mmgbsa_poses = load_mmgbsa(
+        compound_source, rows(SOURCES["mmgbsa_paired"]),
+        rows(SOURCES["mmgbsa_inventory"]), rows(SOURCES["mmgbsa_endpoints"]),
+    )
     compound_ids = {row["prefilter_id"] for row in compound_source}
+    pareto_rows = rows(SOURCES["pareto_candidates"])
+    shortlist_rows = rows(SOURCES["pareto_shortlist"])
+    pareto_by_id = {row["prefilter_id"]: row for row in pareto_rows}
+    shortlist_ids = {row["prefilter_id"] for row in shortlist_rows}
+    pareto_summary = json.loads((ROOT / SOURCES["pareto_summary"]).read_text())
+    if len(pareto_by_id) != len(pareto_rows) or set(pareto_by_id) != compound_ids:
+        raise ValueError("Pareto candidate IDs do not match the complete candidate collection")
+    if len(shortlist_ids) != len(shortlist_rows) or len(shortlist_ids) != 438 or not shortlist_ids <= compound_ids:
+        raise ValueError("The frozen Pareto shortlist must have 438 unique IDs within the full collection")
+    if sha256(ROOT / SOURCES["pareto_shortlist"]) != pareto_summary["outputs"]["cross_domain_shortlist.csv"]:
+        raise ValueError("Frozen Pareto shortlist hash mismatch")
+    if sha256(ROOT / SOURCES["pareto_candidates"]) != pareto_summary["outputs"]["pareto_candidates.csv"]:
+        raise ValueError("Frozen Pareto domain membership hash mismatch")
+    for source in compound_source:
+        p = pareto_by_id[source["prefilter_id"]]
+        if any(source[key] != p[key] for key in ("task", "seed_zinc_id", "canonical_smiles")) or directed_pair(source["pair_key"]) != directed_pair(p["pair_key"]):
+            raise ValueError("Pareto task, parent, structure or receptor direction mismatch")
+        flags = [boolean(p[key]) for key in ("docking_pareto", "druglike_pareto", "admet_pareto")]
+        required = [boolean(p[key]) for key in ("target_pose_stable", "hard_property_pass", "seed_relative_eligible", "cross_domain_shortlist")]
+        if None in flags + required or sum(flags) != number(p["cross_domain_front_count"]):
+            raise ValueError("Invalid Pareto domain membership")
+        expected = all(required[:3]) and sum(flags) >= 2
+        if required[3] != expected or expected != (source["prefilter_id"] in shortlist_ids):
+            raise ValueError("Pareto shortlist membership disagrees with the frozen rule")
     if not STRUCTURE_MANIFEST.is_file():
         raise FileNotFoundError(
             f"Public structure manifest is missing: {STRUCTURE_MANIFEST}. "
@@ -203,6 +239,7 @@ def build() -> dict[str, Any]:
         pose = pose_by_id.get(compound_id, {})
         admet = admet_by_id.get(compound_id, {})
         structure = structure_by_id[compound_id]
+        pareto = pareto_by_id[compound_id]
         properties = {
             key: number(admet.get(key) or source.get(key))
             for key in ["MW", "cLogP", "TPSA", "rotatable_bonds", "HBD", "HBA", "QED", "SA"]
@@ -251,6 +288,17 @@ def build() -> dict[str, Any]:
                 "both_pose_stable": boolean(pose.get("both_pose_stable")),
             },
             "admet": admet_public,
+            "mmgbsa": mmgbsa_candidates[compound_id],
+            "pareto": {
+                "shortlisted": compound_id in shortlist_ids,
+                "target_pose_eligible": boolean(pareto["target_pose_stable"]),
+                "seed_relative_eligible": boolean(pareto["seed_relative_eligible"]),
+                "docking_front": boolean(pareto["docking_pareto"]),
+                "druglike_front": boolean(pareto["druglike_pareto"]),
+                "admet_front": boolean(pareto["admet_pareto"]),
+                "domain_front_count": number(pareto["cross_domain_front_count"]),
+                "evidence_tier": pareto["evidence_tier"],
+            },
             "evidence": {
                 "final_candidate_904": True,
             },
@@ -308,6 +356,7 @@ def build() -> dict[str, Any]:
                     "offtarget_pose_stable": boolean(match["offtarget_pose_stable"]),
                 },
                 "generated_compound_count": compound_counts_by_seed_record[seed_record_id],
+                "mmgbsa": mmgbsa_seeds[seed_record_id],
                 "generated_compound_ids": sorted(seed_compound_ids[seed_record_id]),
             }
         )
@@ -407,6 +456,13 @@ def build() -> dict[str, Any]:
                 "final_candidate_count": compound_counts_by_pair[pair_id],
                 "pocketxmol_seed_record_count": seed_counts_by_pair[pair_id],
                 "pocketxmol_compound_count": compound_counts_by_pair[pair_id],
+                "mmgbsa_complete_count": compound_counts_by_pair[pair_id],
+                "pareto_shortlist_count": sum(
+                    c["pareto"]["shortlisted"] for c in compounds if c["pair_id"] == pair_id
+                ),
+                "mmgbsa_improved_count": sum(
+                    c["mmgbsa"]["improved_vs_parent"] for c in compounds if c["pair_id"] == pair_id
+                ),
                 "detail_mode_selected_compound_count": detail_mode_counts_by_pair[pair_id],
                 "detail_mode_selected_zinc_ids": sorted(detail_mode_zinc_ids_by_pair[pair_id]),
                 "input_seed_zinc_ids": sorted({
@@ -516,7 +572,7 @@ def build() -> dict[str, Any]:
 
     summary = {
         "title": "GPCR Selectivity Atlas",
-        "version": "0.1.0-mvp",
+        "version": "web-2026-11-12-mmgbsa",
         "build_date": date.today().isoformat(),
         "creators": [
             {
@@ -537,6 +593,13 @@ def build() -> dict[str, Any]:
             "seed_task_records": len(seeds),
             "generated_compounds": len(compounds),
             "final_candidates": len(compounds),
+            "pareto_target_pose_eligible": sum(c["pareto"]["target_pose_eligible"] for c in compounds),
+            "pareto_shortlist": len(shortlist_ids),
+            "pareto_shortlist_receptor_pairs": sum(p["pareto_shortlist_count"] > 0 for p in pairs),
+            "mmgbsa_complete_candidates": len(mmgbsa_candidates),
+            "mmgbsa_improved_candidates": sum(c["improved_vs_parent"] for c in mmgbsa_candidates.values()),
+            "mmgbsa_parent_tasks": len(mmgbsa_seeds),
+            "mmgbsa_pose_endpoints": len(mmgbsa_poses),
             "zero_generation_receptor_pairs": len(zero_generation_pair_ids),
             "detail_mode_selected_compounds_for_zero_generation_pairs": len(detail_mode_compounds),
             "zero_generation_pairs_with_detail_mode_compounds": len(detail_mode_counts_by_pair),
@@ -573,6 +636,8 @@ def build() -> dict[str, Any]:
             "The active-state structural similarity matrix has not yet been computed.",
             "Surface binaries and the fingerprint matrix are archived in Zenodo v0.2.0 (DOI: 10.5281/zenodo.23874436); original data are CC BY 4.0 and third-party terms are retained.",
             "The frozen MDS table covers 275 receptors while the canonical distance matrix covers 286.",
+            "MM-GBSA uses single minimized snapshots without entropy or membrane MD; pose-instability flags are retained. A favorable change is not experimental selectivity.",
+            "The complete 904-candidate MM-GBSA web update postdates the immutable Zenodo v0.2.0 release; that DOI does not archive this update.",
         ],
     }
 
@@ -585,6 +650,31 @@ def build() -> dict[str, Any]:
     dump_json("global_surface.json", global_surface)
     dump_json("active_structures.json", active_payload)
     dump_json("provenance.json", provenance)
+    mmgbsa_protocol = {
+        "dataset": "MM-GBSA endpoint rescoring of all 904 docking-improved candidates and actual parents",
+        "web_release": summary["version"], "build_date": summary["build_date"],
+        "counts": {key: value for key, value in summary["counts"].items() if key.startswith("mmgbsa_")},
+        "units": "kcal/mol",
+        "D_definition": "E_target - median(E_offtarget_cluster_representatives)",
+        "delta_definition": "D_candidate - D_actual_parent; delta < 0 is more favorable for the candidate",
+        "protocol": "AmberTools; ff14SB protein / GAFF2 and AM1-BCC ligand; two-stage restrained minimization; GB igb=5, salt 0.150 M; one minimized snapshot per pose.",
+        "pose_selection": "One representative from the largest near-best target cluster; one off-target representative if stable, otherwise up to three cluster representatives. Off-target endpoints are aggregated by their median.",
+        "cohort": "All 904 docking-improved generated candidates. MM-GBSA outcome and pose instability are not exclusion criteria. Parent baselines are task-specific (178 records, 138 distinct ZINC IDs).",
+        "limitations": "No entropy correction, membrane MD sampling, or experimental selectivity validation. Initial docked structures are shared with the docking workflow. Existing structure bundles are unchanged and may not contain every rescored pose.",
+        "archive_scope": "This website update is not included in the immutable Zenodo v0.2.0 archive (10.5281/zenodo.23874436).",
+        "source_hashes": {key: value for key, value in source_hashes.items() if key.startswith("mmgbsa_")},
+        "license": "CC BY 4.0 for original data; third-party terms retained",
+    }
+    dump_json("mmgbsa_protocol.json", mmgbsa_protocol)
+    dump_json("cohort_definitions.json", {
+        "full_candidate_collection": {"count": len(compounds), "role": "Complete docking-score-selected collection retained for traceability and further investigation"},
+        "target_pose_eligible": {"count": summary["counts"]["pareto_target_pose_eligible"], "role": "Candidates eligible for Pareto-front analysis after target-pose convergence"},
+        "primary_computational_shortlist": {"count": len(shortlist_ids), "role": "Primary prioritized deliverable for further validation; a subset of the 904-candidate collection", "highlight": "Lavender row and Final Pareto shortlist badge"},
+        "pareto_method": pareto_summary["method"],
+        "relation_to_mmgbsa": "Frozen Pareto membership is independent of the later MM-GBSA improvement flag. The 438-member shortlist is not the set of 447 candidates with delta < 0.",
+        "interpretation": "Neither collection is experimentally validated for activity or receptor selectivity.",
+        "sources": {key: value for key, value in source_hashes.items() if key.startswith("pareto_")},
+    })
 
     receptor_flat = [
         {
@@ -606,6 +696,8 @@ def build() -> dict[str, Any]:
             "surface_distance": pair["surface_distance"], "pair_terminal_status": pair["pair_terminal_status"],
             "seed_task_records": pair["pocketxmol_seed_record_count"], "input_seed_zinc_ids": "|".join(pair["input_seed_zinc_ids"]),
             "generated_compounds": pair["pocketxmol_compound_count"], "final_candidate_count": pair["final_candidate_count"],
+            "mmgbsa_complete_count": pair["mmgbsa_complete_count"], "mmgbsa_improved_count": pair["mmgbsa_improved_count"],
+            "pareto_shortlist_count": pair["pareto_shortlist_count"],
             "detail_mode_selected_compounds": pair["detail_mode_selected_compound_count"],
             "detail_mode_selected_zinc_ids": "|".join(pair["detail_mode_selected_zinc_ids"]),
         }
@@ -623,6 +715,7 @@ def build() -> dict[str, Any]:
             "fast_dd": s["fast"]["dd"], "detail_target_median": s["detail"]["target_median"], "detail_offtarget_median": s["detail"]["offtarget_median"],
             "detail_dd_median": s["detail"]["dd_median"], "detail_dd_worst": s["detail"]["dd_worst"], "detail_dd_sd": s["detail"]["dd_sd"],
             "generated_compound_count": s["generated_compound_count"],
+            **{f"mmgbsa_{key}": value for key, value in s["mmgbsa"].items()},
         }
         for s in seeds
     ]
@@ -639,6 +732,8 @@ def build() -> dict[str, Any]:
             "seed_detail_dd_median": c["docking"]["seed_dd_median"], "dd_change_vs_seed": c["docking"]["dd_change_vs_seed"],
             "target_pose_stable": c["docking"]["target_pose_stable"], "offtarget_pose_stable": c["docking"]["offtarget_pose_stable"],
             **c["admet"],
+            **{f"mmgbsa_{key}": value for key, value in c["mmgbsa"].items()},
+            **{f"pareto_{key}": value for key, value in c["pareto"].items()},
             "final_candidate_904": c["evidence"]["final_candidate_904"],
             "structure_availability": c["structure_download"]["availability"],
             "structure_bundle_url": c["structure_download"]["bundle_url"],
@@ -646,6 +741,34 @@ def build() -> dict[str, Any]:
         }
         compound_flat.append(out)
     write_csv("compounds_904.csv", compound_flat, list(compound_flat[0]))
+    shortlist_flat = [row for row in compound_flat if row["pareto_shortlisted"]]
+    write_csv("pareto_shortlist_438.csv", shortlist_flat, list(compound_flat[0]), encoding="utf-8-sig")
+    mmgbsa_flat = [
+        {
+            **{key: c[key] for key in (
+                "compound_id", "task", "pair_id", "target_uniprot", "offtarget_uniprot",
+                "target_name", "offtarget_name", "seed_record_id", "seed_zinc_id",
+            )},
+            **c["mmgbsa"],
+            "pareto_shortlisted": c["pareto"]["shortlisted"],
+        }
+        for c in compounds
+    ]
+    mmgbsa_parent_flat = [
+        {
+            **{key: s[key] for key in (
+                "seed_record_id", "seed_zinc_id", "task", "pair_id", "target_uniprot", "offtarget_uniprot",
+            )},
+            **s["mmgbsa"],
+        }
+        for s in seeds
+    ]
+    for name, payload in (
+        ("mmgbsa_candidates_904.csv", mmgbsa_flat),
+        ("mmgbsa_parents_178.csv", mmgbsa_parent_flat),
+        ("mmgbsa_pose_endpoints_3733.csv", mmgbsa_poses),
+    ):
+        write_csv(name, payload, list(payload[0]), encoding="utf-8-sig")
     detail_mode_flat = [
         {
             "detail_record_id": record["detail_record_id"],

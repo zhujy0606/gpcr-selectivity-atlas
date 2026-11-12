@@ -1,6 +1,7 @@
 import csv
 import json
 import re
+import statistics
 import unittest
 import zipfile
 from pathlib import Path
@@ -35,6 +36,13 @@ class PublicBuildTest(unittest.TestCase):
             "seed_task_records": 178,
             "generated_compounds": 904,
             "final_candidates": 904,
+            "mmgbsa_complete_candidates": 904,
+            "mmgbsa_improved_candidates": 447,
+            "mmgbsa_parent_tasks": 178,
+            "mmgbsa_pose_endpoints": 3733,
+            "pareto_target_pose_eligible": 749,
+            "pareto_shortlist": 438,
+            "pareto_shortlist_receptor_pairs": 108,
             "zero_generation_receptor_pairs": 48,
             "detail_mode_selected_compounds_for_zero_generation_pairs": 87,
             "zero_generation_pairs_with_detail_mode_compounds": 48,
@@ -54,6 +62,86 @@ class PublicBuildTest(unittest.TestCase):
         citation = (PUBLIC / "CITATION.cff").read_text()
         self.assertIn('given-names: "Jingyi"', citation)
         self.assertIn('orcid: "https://orcid.org/0009-0003-8404-0455"', citation)
+
+    def test_mmgbsa_endpoints_reconstruct_actual_parent_comparisons(self):
+        def read_csv(name):
+            with (SITE / "downloads" / name).open(encoding="utf-8-sig", newline="") as handle:
+                return list(csv.DictReader(handle))
+        candidates = read_csv("mmgbsa_candidates_904.csv")
+        parents = read_csv("mmgbsa_parents_178.csv")
+        poses = read_csv("mmgbsa_pose_endpoints_3733.csv")
+        self.assertEqual((len(candidates), len(parents), len(poses)), (904, 178, 3733))
+        parent_by_seed = {row["seed_record_id"]: row for row in parents}
+        self.assertEqual(len(parent_by_seed), 178)
+        pose_groups = {}
+        for row in poses:
+            pose_groups.setdefault((row["molecule_id"], row["role"]), []).append(float(row["endpoint_binding_energy_kcal_mol"]))
+            self.assertEqual(row["receptor_uniprot"], row[f'{row["role"]}_uniprot'])
+        deltas = []
+        for row in candidates:
+            parent = parent_by_seed[row["seed_record_id"]]
+            self.assertEqual(row["parent_id"], parent["record_id"])
+            for key in ("task", "target_uniprot", "offtarget_uniprot", "seed_zinc_id"):
+                self.assertEqual(row[key], parent[key])
+            target = pose_groups[(row["compound_id"], "target")]
+            off = pose_groups[(row["compound_id"], "offtarget")]
+            ptarget = pose_groups[(parent["record_id"], "target")]
+            poff = pose_groups[(parent["record_id"], "offtarget")]
+            self.assertEqual(len(target), 1)
+            self.assertEqual(len(ptarget), 1)
+            delta = target[0] - statistics.median(off) - (ptarget[0] - statistics.median(poff))
+            self.assertAlmostEqual(delta, float(row["delta_vs_parent_kcal_mol"]), places=8)
+            self.assertEqual(delta < 0, row["improved_vs_parent"] == "True")
+            deltas.append(delta)
+        self.assertEqual(sum(delta < 0 for delta in deltas), 447)
+        self.assertEqual(sum(row["target_pose_stable"] == "False" for row in candidates), 155)
+        self.assertEqual(sum(row["offtarget_pose_stable"] == "False" for row in candidates), 710)
+        public_by_id = {c["compound_id"]: c for c in self.compounds}
+        for row in candidates:
+            result = public_by_id[row["compound_id"]]["mmgbsa"]
+            self.assertEqual(result["delta_vs_parent_kcal_mol"], float(row["delta_vs_parent_kcal_mol"]))
+        self.assertEqual(sum(p["mmgbsa_complete_count"] for p in self.pairs), 904)
+        self.assertEqual(sum(p["mmgbsa_improved_count"] for p in self.pairs), 447)
+
+    def test_mmgbsa_loader_rejects_wrong_direction_parent_and_incomplete_data(self):
+        import build
+        from mmgbsa import load_mmgbsa
+        from copy import deepcopy
+        master = [build.rows(build.SOURCES["compounds_904"])[0]]
+        paired = [r for r in build.rows(build.SOURCES["mmgbsa_paired"]) if r["prefilter_id"] == master[0]["prefilter_id"]]
+        ids = {paired[0]["prefilter_id"], paired[0]["parent_prefilter_id"]}
+        inventory = [r for r in build.rows(build.SOURCES["mmgbsa_inventory"]) if r["prefilter_id"] in ids]
+        endpoints = [r for r in build.rows(build.SOURCES["mmgbsa_endpoints"]) if r["prefilter_id"] in ids]
+        load_mmgbsa(master, paired, inventory, endpoints)
+        wrong_direction = deepcopy(endpoints)
+        wrong_direction[0]["receptor_uniprot"] = "WRONG"
+        wrong_parent = deepcopy(inventory)
+        next(r for r in wrong_parent if r["kind"] == "seed")["task"] = "different_task"
+        wrong_delta = deepcopy(paired)
+        wrong_delta[0]["delta_median_kcal_mol"] = "0"
+        for p, i, e in (
+            (paired, inventory, wrong_direction), (paired, wrong_parent, endpoints),
+            (wrong_delta, inventory, endpoints), (paired + paired, inventory, endpoints),
+            (paired, inventory, [r for r in endpoints if r["role"] != "target"]),
+        ):
+            with self.assertRaises(ValueError):
+                load_mmgbsa(master, p, i, e)
+
+    def test_pareto_shortlist_is_the_frozen_subset_and_not_mmgbsa_selection(self):
+        with (ROOT / "deliverables/agent6_bidirectional_final_20260824/cross_domain_shortlist.csv").open(encoding="utf-8-sig") as handle:
+            frozen_ids = {row["prefilter_id"] for row in csv.DictReader(handle)}
+        with (SITE / "downloads/pareto_shortlist_438.csv").open(encoding="utf-8-sig") as handle:
+            download = list(csv.DictReader(handle))
+        highlighted = [c for c in self.compounds if c["pareto"]["shortlisted"]]
+        self.assertEqual(len(highlighted), 438)
+        self.assertEqual({c["compound_id"] for c in highlighted}, frozen_ids)
+        self.assertEqual({c["compound_id"] for c in download}, frozen_ids)
+        self.assertEqual(sum(c["pareto"]["domain_front_count"] == 3 for c in highlighted), 213)
+        self.assertEqual(sum(c["pareto"]["domain_front_count"] == 2 for c in highlighted), 225)
+        self.assertTrue(all(c["pareto"]["target_pose_eligible"] and c["pareto"]["seed_relative_eligible"] for c in highlighted))
+        self.assertTrue(any(not c["mmgbsa"]["improved_vs_parent"] for c in highlighted))
+        self.assertTrue(any(c["mmgbsa"]["improved_vs_parent"] and not c["pareto"]["shortlisted"] for c in self.compounds))
+        self.assertEqual(sum(p["pareto_shortlist_count"] for p in self.pairs), 438)
 
     def test_relations(self):
         self.assertEqual(len(self.receptors), 287)
@@ -106,7 +194,10 @@ class PublicBuildTest(unittest.TestCase):
         self.assertIsNone(re.search(r"[\u4e00-\u9fff]", html + javascript))
         self.assertNotIn("PocketXMol", html + javascript)
         self.assertNotIn("robust", html.lower() + javascript.lower())
-        self.assertNotIn("438", html + javascript)
+        self.assertIn("438", html + javascript)
+        self.assertIn("Final Pareto shortlist", javascript)
+        self.assertIn("shortlist-only", javascript)
+        self.assertIn("pareto_shortlist_438.csv", html)
         self.assertIn("structure.bundle_url", javascript)
         self.assertNotIn("pair.strict_final_selected_count", javascript)
         self.assertNotIn("evidenceLabel", javascript)
@@ -114,6 +205,9 @@ class PublicBuildTest(unittest.TestCase):
         self.assertIn("'Worst ΔE (kcal/mol)'", javascript)
         self.assertIn("'ΔE change vs seed (kcal/mol)'", javascript)
         self.assertIn("ΔE = E<sub>target</sub> − E<sub>off-target</sub>", javascript)
+        self.assertIn("MM-GBSA rescoring", javascript)
+        self.assertIn("mmgbsa_candidates_904.csv", html + javascript)
+        self.assertIn("delta_vs_parent_kcal_mol", javascript)
 
     def test_structure_downloads(self):
         self.assertTrue(all(compound["structure_download"]["ligand_sdf_count"] == 1 for compound in self.compounds))

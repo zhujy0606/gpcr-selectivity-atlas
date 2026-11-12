@@ -6,6 +6,27 @@
   "$defs": {
     "uniprot": {"type": "string", "pattern": "^[A-Z0-9]+$"},
     "pair_id": {"type": "string", "pattern": "^[A-Z0-9]+__[A-Z0-9]+$"},
+    "mmgbsa": {
+      "type": "object",
+      "description": "Single-minimized-snapshot endpoint rescoring. D = target minus median off-target endpoint; delta = candidate D minus actual-parent D. Computational trends only.",
+      "required": ["status", "parent_id", "target_energy_kcal_mol", "offtarget_energy_median_kcal_mol", "differential_kcal_mol", "parent_differential_kcal_mol", "delta_vs_parent_kcal_mol", "improved_vs_parent", "target_pose_count", "offtarget_pose_count", "target_pose_stable", "offtarget_pose_stable", "parent_target_pose_stable", "parent_offtarget_pose_stable"],
+      "properties": {
+        "status": {"const": "paired_complete"},
+        "parent_id": {"type": "string"},
+        "target_energy_kcal_mol": {"type": "number"},
+        "offtarget_energy_median_kcal_mol": {"type": "number"},
+        "differential_kcal_mol": {"type": "number"},
+        "parent_differential_kcal_mol": {"type": "number"},
+        "delta_vs_parent_kcal_mol": {"type": "number"},
+        "improved_vs_parent": {"type": "boolean"},
+        "target_pose_count": {"const": 1},
+        "offtarget_pose_count": {"type": "integer", "minimum": 1, "maximum": 3},
+        "target_pose_stable": {"type": "boolean"},
+        "offtarget_pose_stable": {"type": "boolean"},
+        "parent_target_pose_stable": {"type": "boolean"},
+        "parent_offtarget_pose_stable": {"type": "boolean"}
+      }
+    },
     "hotspot": {
       "type": "object",
       "required": ["hotspot_id", "rank", "bw", "residues", "fingerprint_difference"],
@@ -19,7 +40,7 @@
     },
     "compound": {
       "type": "object",
-      "required": ["compound_id", "canonical_smiles", "pair_id", "target_uniprot", "offtarget_uniprot", "seed_record_id", "properties", "docking", "admet", "evidence", "structure_download"],
+      "required": ["compound_id", "canonical_smiles", "pair_id", "target_uniprot", "offtarget_uniprot", "seed_record_id", "properties", "docking", "admet", "mmgbsa", "pareto", "evidence", "structure_download"],
       "properties": {
         "compound_id": {"type": "string", "pattern": "^A6PX-"},
         "canonical_smiles": {"type": "string"},
@@ -30,6 +51,20 @@
         "properties": {"type": "object"},
         "docking": {"type": "object"},
         "admet": {"type": "object"},
+        "mmgbsa": {"$ref": "#/$defs/mmgbsa"},
+        "pareto": {
+          "type": "object",
+          "required": ["shortlisted", "target_pose_eligible", "seed_relative_eligible", "docking_front", "druglike_front", "admet_front", "domain_front_count"],
+          "properties": {
+            "shortlisted": {"type": "boolean"},
+            "target_pose_eligible": {"type": "boolean"},
+            "seed_relative_eligible": {"type": "boolean"},
+            "docking_front": {"type": "boolean"},
+            "druglike_front": {"type": "boolean"},
+            "admet_front": {"type": "boolean"},
+            "domain_front_count": {"type": "integer", "minimum": 0, "maximum": 3}
+          }
+        },
         "structure_download": {
           "type": "object",
           "required": ["availability", "bundle_url", "bundle_size_bytes", "bundle_sha256", "ligand_sdf_count", "complex_pdb_count", "complex_pdbs"],
