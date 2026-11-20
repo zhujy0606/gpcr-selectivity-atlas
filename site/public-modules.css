@@ -258,6 +258,35 @@
   color: #374109;
 }
 
+.detail-mode-count {
+  background: #cde6d9;
+  color: #165b47;
+}
+
+.mmgbsa-count {
+  background: #dde9f3;
+  color: #214e71;
+}
+
+.not-applicable {
+  color: var(--muted);
+}
+
+#pair-table table {
+  min-width: 1360px;
+}
+
+#pair-table th {
+  white-space: normal;
+}
+
+.catalog-count-note {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
 .pair-total-note {
   margin-top: 14px;
 }

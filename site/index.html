@@ -7,7 +7,7 @@
   <title>GPCR Selectivity Atlas</title>
   <link rel="stylesheet" href="styles.css?v=20260828c">
   <link rel="stylesheet" href="seed-lineage.css?v=20260828c">
-  <link rel="stylesheet" href="public-modules.css?v=20261112-mmgbsa-pareto">
+  <link rel="stylesheet" href="public-modules.css?v=20261120-catalog-counts">
 </head>
 <body>
   <header class="topbar">
@@ -87,8 +87,9 @@
         <div class="head-downloads"><a class="table-download" href="downloads/receptor_pairs_top3.csv" download>Download receptor-pair CSV</a><a class="table-download" href="downloads/compounds_904.csv" download>All 904 candidates (CSV)</a><a class="table-download" href="downloads/pareto_shortlist_438.csv" download>Final 438 shortlist (CSV)</a><a class="table-download" href="downloads/detail_mode_compounds.csv" download>Download detail-mode CSV</a><a class="table-download" href="downloads/mmgbsa_candidates_904.csv" download>Download MM-GBSA CSV</a></div>
       </div>
       <div class="toolbar"><label>Search receptor pairs<input id="pair-search" type="search" placeholder="Receptor, ZINC ID, compound ID, or BW position"></label><span id="pair-count"></span></div>
-      <div class="table-intro"><b>Receptor-pair catalog</b><span>Select a pair to inspect hotspots, input seeds, and generated compounds.</span></div>
+      <div class="table-intro"><b>Receptor-pair catalog</b><span>Select a pair to inspect hotspots, screened ZINC compounds, generated candidates, and MM-GBSA results.</span></div>
       <div id="pair-table" class="data-table"></div>
+      <p class="catalog-count-note">Detail-mode counts show the 87 supplemental ZINC compounds listed for the 48 pairs without candidates in the 904-member generated collection; — means no separate supplemental records. These counts do not represent the full 1,644-compound screened pool. MM-GBSA counts refer to the generated candidates with complete matched-parent results. “Improved” means a more favorable target-minus-off-target differential than the actual parent (δ &lt; 0); the percentage uses the rescored count in that row. MM-GBSA improvement and Pareto-shortlist membership are separate criteria.</p>
       <aside class="notice amber pair-total-note"><strong>Data integrity</strong><span id="pair-total-check">Validating compound-to-pair relationships…</span></aside>
     </section>
   </main>
@@ -98,6 +99,6 @@
     <span>GPCR Selectivity Atlas · Jingyi Zhu · Shandong University · <a href="https://orcid.org/0009-0003-8404-0455" target="_blank" rel="noreferrer">ORCID</a></span>
     <span id="footer-version">loading…</span>
   </footer>
-  <script src="app.js?v=20261112-mmgbsa-pareto"></script>
+  <script src="app.js?v=20261120-catalog-counts"></script>
 </body>
 </html>

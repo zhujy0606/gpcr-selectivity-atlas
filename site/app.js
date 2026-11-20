@@ -88,7 +88,7 @@ function renderPairs(){
   ],query));
   $('#pair-count').textContent=`${items.length} / ${state.pairs.length} receptor pairs`;
   $('#pair-table').innerHTML=table(
-    ['Rank','Receptor A','Receptor B','dMaSIF/MaSIF distance','Top 3 differential hotspots','Input seed records','Pocketxmol-generated compounds','Record'],
+    ['Rank','Receptor A','Receptor B','dMaSIF/MaSIF distance','Top 3 differential hotspots','Input seed records','Detail-mode selected compounds','Pocketxmol-generated compounds','MM-GBSA rescored candidates','Record'],
     items.map(pair=>`<tr class="clickable" data-pair="${pair.pair_id}">
       <td><b>#${pair.rank}</b></td>
       <td><b>${esc(pair.receptor_a.name)}</b><br><span class="mono">${pair.receptor_a.uniprot}</span></td>
@@ -96,7 +96,9 @@ function renderPairs(){
       <td><b>${fmt(pair.surface_distance,3)}</b></td>
       <td>${pair.hotspots.map(hotspot=>badge(hotspot.bw,'good')).join(' ')}</td>
       <td><b>${pairSeeds(pair.pair_id).length}</b><br><small>${pair.input_seed_zinc_ids.length} ZINC IDs</small></td>
-      <td><b class="molecule-count">${pairMolecules(pair.pair_id).length}</b>${pairMolecules(pair.pair_id).length===0?`<br><small>${pairDetailModeCompounds(pair.pair_id).length} detail-mode selected</small>`:`<br><small class="pareto-count">${pair.pareto_shortlist_count} in final Pareto shortlist</small>`}</td>
+      <td>${pair.detail_mode_selected_compound_count?`<b class="molecule-count detail-mode-count">${pair.detail_mode_selected_compound_count}</b><br><small>ZINC compounds</small>`:'<span class="not-applicable" title="No separate supplemental detail-mode records; see Input seeds.">—</span>'}</td>
+      <td><b class="molecule-count">${pairMolecules(pair.pair_id).length}</b>${pairMolecules(pair.pair_id).length?`<br><small class="pareto-count">${pair.pareto_shortlist_count} in final Pareto shortlist</small>`:''}</td>
+      <td><b class="molecule-count mmgbsa-count">${pair.mmgbsa_complete_count}</b>${pair.mmgbsa_complete_count?`<br><small>${pair.mmgbsa_improved_count} improved (${(100*pair.mmgbsa_improved_count/pair.mmgbsa_complete_count).toFixed(1)}%)</small>`:'<br><small>No candidates in 904 set</small>'}</td>
       <td><span class="row-action">Open evidence tables →</span></td>
     </tr>`)
   );

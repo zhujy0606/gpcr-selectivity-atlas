@@ -1,5 +1,7 @@
 # 公开发布记录
 
+2026-11-20网页目录更新：独立展示detail-mode补充ZINC数量及MM-GBSA已重评分数量、相对母体改善数量和比例。使用原有87个补充分子与904个生成候选物数据，数据范围与改善定义已在表下说明。未改变科学数据、结构包或固定Zenodo归档。
+
 2026-11-12网页数据更新：纳入全部904个候选物及178条母体任务的MM-GBSA配对结果、3733条构象能量，并突出原438个跨域Pareto优选项。新增独立CSV、字段定义和来源哈希；MM-GBSA改善与Pareto成员资格分别记录。本次仅更新GitHub Pages及仓库，不改动固定Zenodo v0.2.0 DOI或既有结构ZIP；完整904项MM-GBSA更新不在该归档版本中。
 
 - 网站：https://zhujy0606.github.io/gpcr-selectivity-atlas/
